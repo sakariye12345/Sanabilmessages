@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Recorded Classes</title>
+
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 14px;
+      margin: 40px;
+      color: #333;
+    }
+
+    .header-path {
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    .header-path b {
+      font-weight: 700;
+      font-size: 22px;
+    }
+
+    .back-container {
+      position: absolute;
+      top: 30px;
+      right: 40px;
+    }
+
+    .back-container button {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      padding: 5px 15px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .back-container button:hover {
+      background-color: #f0f0f0;
+    }
+
+    #classesTable_wrapper .dt-buttons {
+      margin-bottom: 10px;
+    }
+
+    table.dataTable thead th {
+      background-color: #f9f9f9;
+      font-weight: 700;
+      border-bottom: 1px solid #ddd;
+      font-size: 16px;
+
+    }
+
+    table.dataTable tbody td {
+      vertical-align: middle;
+      font-size: 16px;
+      border: 1px solid #ccc;
+    }
+
+    .status-submitted {
+      color: green;
+      font-weight: bold;
+    }
+
+    .status-pending {
+      color: red;
+      font-weight: bold;
+    }
+
+    .view-btn {
+      padding: 5px 15px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      background-color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .view-btn:hover {
+      background-color: #f2f2f2;
+    }
+
+    /* Scrollbar mimic */
+    div.dataTables_wrapper div.dataTables_scrollBody {
+      border-top: 1px solid #ccc;
+      border-bottom: 1px solid #ccc;
+    }
+
+    /* Scrollbar visible mimic (dark gray track) */
+    ::-webkit-scrollbar {
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #ddd;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #666;
+      border-radius: 10px;
+    }
+
+    /* Pagination button */
+    .dataTables_paginate .paginate_button {
+      border-radius: 5px !important;
+      padding: 5px 10px !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-path">
+    <b>Recorded classes</b> \ Schools Demo \ All Classes \ Date: 2025-11-06
+  </div>
+
+  <div class="back-container">
+    <button>&larr; Back</button>
+  </div>
+
+  <table id="classesTable" class="display nowrap" style="width:100%">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Date</th>
+        <th>Class</th>
+       
+        <th>Updated by</th>
+        <th>Status</th>
+        <th>View</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>3</td>
+        <td>2025-11-06</td>
+        <td>Form 4A - 02</td>
+        
+        <td>System at 06-Nov-2025 16:21:38</td>
+        <td><span class="status-submitted">Submitted</span></td>
+        <td><button class="view-btn">View</button></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>2025-11-06</td>
+        <td>Form 2A - 07</td>
+        
+        <td>System at 06-Nov-2025</td>
+        <td><span class="status-pending">Pending</span></td>
+        <td><button class="view-btn">View</button></td>
+      </tr>
+      <tr>
+        <td>1</td>
+        <td>2025-11-06</td>
+        <td>form 3A - 01</td>
+        
+        <td>System at 06-Nov-2025 16:55:38</td>
+        <td><span class="status-submitted">Submitted</span></td>
+        <td><button class="view-btn">View</button></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Dependencies -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.flash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+
+  <script>
+    $(document).ready(function () {
+      $('#classesTable').DataTable({
+        scrollX: true,
+        dom: 'Blfrtip',
+        buttons: [
+          'copy', 'excel', 'csv', 'pdf', 'print', 'colvis'
+        ],
+        pageLength: 100
+      });
+    });
+  </script>
+
+</body>
+</html>

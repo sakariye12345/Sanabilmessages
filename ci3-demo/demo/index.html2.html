@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Smart Business Solutions | SBS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="description"
+    content="Smart Business Solutions (SBS) – SME consulting, entrepreneurship training (ILO SIYB) and digitalization solutions in Somaliland."
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg-page: #020617;
+      --bg-alt: #020617;
+      --bg-card: rgba(15, 23, 42, 0.96);
+      --bg-soft: rgba(15, 23, 42, 0.85);
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.16);
+      --accent-2: #38bdf8;
+      --accent-3: #a855f7;
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --text-soft: #6b7280;
+      --border-soft: rgba(148, 163, 184, 0.3);
+      --border-strong: rgba(148, 163, 184, 0.55);
+      --radius-lg: 1.4rem;
+      --radius-xl: 1.8rem;
+      --shadow-soft: 0 22px 60px rgba(15, 23, 42, 0.9);
+      --shadow-card: 0 18px 50px rgba(15, 23, 42, 0.95);
+      --nav-height: 76px;
+      --container-width: 1120px;
+      --transition-fast: 0.18s ease;
+      --transition-med: 0.25s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top, #0b1120 0, #020617 45%, #000 100%);
+      color: var(--text-main);
+      line-height: 1.7;
+      min-height: 100vh;
+      font-size: 16px;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    main {
+      padding-bottom: 3rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: var(--container-width);
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    section {
+      padding: 4rem 0;
+      scroll-margin-top: calc(var(--nav-height) + 32px);
+    }
+
+    @media (min-width: 1024px) {
+      section {
+        padding: 4.75rem 0;
+      }
+    }
+
+    /* TYPOGRAPHY */
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    h1.hero-title {
+      font-size: clamp(2.4rem, 4.2vw, 3.4rem);
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+      max-width: 34rem;
+    }
+
+    h2.section-title {
+      font-size: clamp(1.6rem, 2.1vw, 1.9rem);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    h3.card-title {
+      font-size: 1.05rem;
+      margin-bottom: 0.55rem;
+    }
+
+    h3.section-subtitle {
+      font-size: 0.98rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+    }
+
+    p {
+      font-size: 0.94rem;
+      color: var(--text-muted);
+    }
+
+    small,
+    .caption {
+      font-size: 0.78rem;
+      color: var(--text-soft);
+    }
+
+    .eyebrow {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-soft);
+      margin-bottom: 0.55rem;
+    }
+
+    /* UTILITIES & ANIMATION */
+
+    .pill-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background:
+        radial-gradient(circle at 0 0, rgba(34, 197, 94, 0.18), transparent 60%);
+      font-size: 0.75rem;
+      padding: 0.28rem 0.9rem 0.28rem 0.3rem;
+      color: var(--text-muted);
+    }
+
+    .pill-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, #bbf7d0, #22c55e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #022c22;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35);
+    }
+
+    .pill-strong {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;      /* title + subheading in one column */
+  justify-content: center;
+  align-items: center;         /* center horizontally */
+  gap: 1rem;
+  margin-bottom: 2.4rem;
+  text-align: center;          /* center text */
+}
+
+   .section-header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: center;         /* center inner content */
+  text-align: center;
+}
+
+    .section-badge {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      color: var(--text-muted);
+    }
+
+   .section-kicker {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  max-width: 32rem;
+  margin: 0.25rem auto 0;      /* center the paragraph */
+}
+
+ /* Mobile tweak – keep it centered on small screens as well */
+@media (max-width: 640px) {
+  .section-header {
+    align-items: center;
+  }
+}
+    .btn-primary,
+    .btn-ghost,
+    .btn-outline {
+      border-radius: 999px;
+      font-size: 0.9rem;
+      padding: 0.75rem 1.45rem;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      cursor: pointer;
+      transition:
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast),
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        color var(--transition-fast),
+        opacity var(--transition-fast);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background-image: linear-gradient(135deg, #22c55e, #38bdf8);
+      color: #022c22;
+      font-weight: 600;
+      box-shadow: 0 18px 42px rgba(16, 185, 129, 0.45);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 22px 48px rgba(16, 185, 129, 0.6);
+      filter: brightness(1.05);
+    }
+
+    .btn-ghost {
+      background: rgba(15, 23, 42, 0.9);
+      border-color: rgba(148, 163, 184, 0.55);
+      color: var(--text-main);
+    }
+
+    .btn-ghost:hover {
+      transform: translateY(-1px);
+      border-color: rgba(148, 163, 184, 0.85);
+      background: radial-gradient(circle at 0 0, rgba(148, 163, 184, 0.18), rgba(15, 23, 42, 1));
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.95);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border-color: rgba(148, 163, 184, 0.65);
+      color: var(--text-main);
+    }
+
+    .btn-outline:hover {
+      border-color: rgba(34, 197, 94, 0.85);
+      background: radial-gradient(circle at 0 0, rgba(34, 197, 94, 0.12), transparent 65%);
+    }
+
+    .btn-icon {
+      font-size: 1rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.75rem;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--text-muted);
+    }
+
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: radial-gradient(circle at 0 0, rgba(34, 197, 94, 0.14), transparent 60%);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .stat-pill strong {
+      color: #e5e7eb;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition:
+        opacity 0.6s ease,
+        transform 0.6s ease;
+    }
+
+    .reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 {
+      transition-delay: 0.08s;
+    }
+
+    .reveal-delay-2 {
+      transition-delay: 0.16s;
+    }
+
+    .reveal-delay-3 {
+      transition-delay: 0.24s;
+    }
+
+    /* NAVBAR */
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .navbar-wrapper {
+      backdrop-filter: blur(22px);
+      background:
+        linear-gradient(
+          to bottom,
+          rgba(15, 23, 42, 0.97),
+          rgba(15, 23, 42, 0.9),
+          rgba(15, 23, 42, 0.85),
+          transparent
+        );
+      border-bottom: 1px solid rgba(31, 41, 55, 0.7);
+    }
+
+    .nav-container {
+      height: var(--nav-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.25rem;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .brand-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 1.35rem;
+      background:
+        conic-gradient(from 140deg, #22c55e, #38bdf8, #a855f7, #22c55e);
+      padding: 2px;
+      box-shadow: 0 12px 34px rgba(15, 23, 42, 0.9);
+      flex-shrink: 0;
+    }
+
+    .brand-badge-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background:
+        radial-gradient(circle at 0 0, rgba(248, 250, 252, 0.12), #020617 65%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Poppins", system-ui, sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+      color: #f9fafb;
+    }
+
+    .brand-text-heading {
+      font-family: "Poppins", system-ui, sans-serif;
+      font-weight: 600;
+      font-size: 1.05rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      line-height: 1.2;
+    }
+
+    .brand-text-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      font-size: 0.86rem;
+      color: var(--text-muted);
+    }
+
+    .nav-links a {
+      position: relative;
+      padding-bottom: 3px;
+      transition: color var(--transition-fast);
+    }
+
+    .nav-links a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 0%;
+      height: 2px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width var(--transition-fast);
+    }
+
+    .nav-links a:hover {
+      color: #e5e7eb;
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    .nav-cta-inline {
+      margin-left: 0.5rem;
+    }
+
+    .nav-toggle {
+      display: none;
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.95);
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      flex-direction: column;
+      cursor: pointer;
+      transition:
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        transform var(--transition-fast);
+    }
+
+    .nav-toggle span {
+      width: 18px;
+      height: 2px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      transition:
+        transform var(--transition-fast),
+        opacity var(--transition-fast),
+        width var(--transition-fast);
+    }
+
+    .nav-toggle:hover {
+      border-color: rgba(34, 197, 94, 0.9);
+      background: radial-gradient(circle at 0 0, rgba(34, 197, 94, 0.16), rgba(15, 23, 42, 1));
+      transform: translateY(-1px);
+    }
+
+    .nav-toggle.is-active span:nth-child(1) {
+      transform: translateY(4px) rotate(45deg);
+    }
+
+    .nav-toggle.is-active span:nth-child(2) {
+      opacity: 0;
+      width: 8px;
+    }
+
+    .nav-toggle.is-active span:nth-child(3) {
+      transform: translateY(-4px) rotate(-45deg);
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        position: fixed;
+        inset: var(--nav-height) 0 auto 0;
+        padding: 1.1rem 1.5rem 1.5rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.9rem;
+        background: radial-gradient(circle at 0 0, rgba(15, 23, 42, 1), rgba(2, 6, 23, 0.98));
+        border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+        transform: translateY(-12px);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity var(--transition-med),
+          transform var(--transition-med);
+      }
+
+      .nav-links.nav-open {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .nav-links a {
+        font-size: 0.9rem;
+      }
+
+      .nav-cta-inline {
+        margin-left: 0;
+        margin-top: 0.25rem;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .nav-toggle {
+        display: inline-flex;
+      }
+    }
+
+    /* HERO */
+
+    .hero {
+      padding: 4.5rem 0 4rem;
+    }
+
+    .hero-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 3.25rem;
+      align-items: center;
+    }
+
+    @media (max-width: 960px) {
+      .hero-inner {
+        grid-template-columns: 1fr;
+        gap: 2.6rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero {
+        padding-top: 3.75rem;
+      }
+    }
+
+    .hero-title span.gradient {
+      background-image: linear-gradient(120deg, #22c55e, #38bdf8, #a855f7);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 0.98rem;
+      color: var(--text-muted);
+      max-width: 36rem;
+      margin-bottom: 1rem;
+    }
+
+    .hero-subtitle strong {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    .hero-segment {
+      font-size: 0.9rem;
+      color: var(--text-soft);
+      margin-bottom: 1.2rem;
+      max-width: 32rem;
+    }
+
+    .hero-somali {
+      font-size: 0.87rem;
+      color: #9ca3af;
+      font-style: italic;
+      margin-bottom: 1.8rem;
+      max-width: 32rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.9rem;
+      margin-bottom: 1.6rem;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.1rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+    }
+
+    .hero-meta strong {
+      color: #e5e7eb;
+      font-weight: 600;
+    }
+
+    .hero-card {
+      background:
+        radial-gradient(circle at 0 0, rgba(56, 189, 248, 0.5), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(34, 197, 94, 0.4), transparent 50%),
+        rgba(15, 23, 42, 0.98);
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      padding: 1.7rem 1.8rem;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    @media (max-width: 640px) {
+      .hero-card {
+        padding: 1.5rem 1.4rem;
+      }
+    }
+
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 0 0, rgba(248, 250, 252, 0.12), transparent 60%);
+      opacity: 0.7;
+      mix-blend-mode: soft-light;
+      pointer-events: none;
+    }
+
+    .hero-card-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-card-kicker {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #e5e7eb;
+      margin-bottom: 0.45rem;
+    }
+
+    .hero-card h2 {
+      font-size: 1.12rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .hero-card p {
+      font-size: 0.86rem;
+      color: #d1d5db;
+      margin-bottom: 0.9rem;
+    }
+
+    .hero-tag-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 1.3rem;
+    }
+
+    .hero-tag-pill {
+      font-size: 0.74rem;
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      color: #e5e7eb;
+      backdrop-filter: blur(8px);
+    }
+
+    .hero-impact-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1.1rem;
+      margin-bottom: 0.8rem;
+      font-size: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-impact-col strong {
+      display: block;
+      font-size: 0.96rem;
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+
+    .hero-impact-col span {
+      color: #d1d5db;
+    }
+
+    .glow-orbit {
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      border-radius: 999px;
+      border: 1px dashed rgba(148, 163, 184, 0.35);
+      top: -42px;
+      right: -68px;
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .glow-orbit::before {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, #bbf7d0, #22c55e);
+      box-shadow: 0 0 24px rgba(34, 197, 94, 0.85);
+      top: 28%;
+      left: 14%;
+    }
+
+    .glow-orbit::after {
+      content: "";
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, #bae6fd, #38bdf8);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.95);
+      bottom: 14%;
+      right: 14%;
+    }
+
+    /* CARDS & GRIDS */
+
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow-card);
+      padding: 1.6rem 1.7rem;
+    }
+
+    .card p strong {
+      color: #e5e7eb;
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .about-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kv-list {
+      list-style: none;
+      margin-top: 0.9rem;
+      display: grid;
+      gap: 0.55rem;
+      font-size: 0.86rem;
+    }
+
+    .kv-label {
+      font-weight: 500;
+      color: #e5e7eb;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.6rem;
+      align-items: stretch;
+    }
+
+    @media (max-width: 1040px) {
+      .services-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 768px) {
+      .services-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .service-card {
+      position: relative;
+      overflow: hidden;
+      padding-top: 1.35rem;
+      padding-bottom: 1.35rem;
+      transition:
+        transform var(--transition-med),
+        box-shadow var(--transition-med),
+        border-color var(--transition-med),
+        background var(--transition-med),
+        translate var(--transition-med);
+      cursor: default;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .service-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 0 0, rgba(34, 197, 94, 0.18), transparent 55%);
+      opacity: 0;
+      transition: opacity var(--transition-med);
+      pointer-events: none;
+    }
+
+    .service-card:hover::before {
+      opacity: 1;
+    }
+
+    .service-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 24px 72px rgba(15, 23, 42, 1);
+      border-color: rgba(34, 197, 94, 0.55);
+    }
+
+    .service-tagline {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--accent-2);
+      margin-bottom: 0.15rem;
+    }
+
+    .service-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+      background:
+        radial-gradient(circle at 30% 0, rgba(190, 242, 100, 0.9), rgba(34, 197, 94, 0.85));
+      color: #052e16;
+      font-size: 1.1rem;
+    }
+
+    .service-card p {
+      font-size: 0.86rem;
+      color: #d1d5db;
+      margin-bottom: 0.7rem;
+    }
+
+    .service-list {
+      list-style: none;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: grid;
+      gap: 0.38rem;
+      margin-top: 0.35rem;
+    }
+
+    .service-list li::before {
+      content: "•";
+      margin-right: 0.4rem;
+      color: var(--accent);
+    }
+
+    .services-cta {
+      margin-top: 2.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .services-cta-text {
+      font-size: 0.9rem;
+      color: var(--text-soft);
+      max-width: 30rem;
+    }
+
+    .services-cta-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    /* APPROACH & IMPACT */
+
+    .approach-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: 2.1rem;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .approach-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .steps {
+      list-style: none;
+      display: grid;
+      gap: 1rem;
+      font-size: 0.88rem;
+    }
+
+    .steps li {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: start;
+    }
+
+    .step-index {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #e5e7eb;
+      background: radial-gradient(circle at 30% 0, rgba(34, 197, 94, 0.2), transparent 70%);
+    }
+
+    .step-body strong {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.12rem;
+    }
+
+    .step-body span {
+      color: var(--text-muted);
+    }
+
+    .approach-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 2.1rem;
+  align-items: stretch;            /* stretch items to same height */
+}
+
+/* ensure each card fills the grid row and content stacks nicely */
+.approach-grid > .card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* optional: let inner content grow nicely without pushing footer text */
+.steps {
+  flex: 1 1 auto;
+}
+
+.impact-metrics {
+  margin-top: 0.85rem;
+}
+
+    .impact-card {
+      background:
+        radial-gradient(circle at 0 0, rgba(34, 197, 94, 0.18), transparent 55%),
+        var(--bg-card);
+    }
+
+    .impact-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 0.85rem;
+      font-size: 0.82rem;
+    }
+
+    @media (max-width: 640px) {
+      .impact-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .impact-metric strong {
+      display: block;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+
+    .impact-metric span {
+      color: var(--text-muted);
+    }
+
+    .impact-caption {
+      margin-top: 0.9rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .impact-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.8rem;
+      font-size: 0.75rem;
+    }
+
+    /* CONTACT */
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+      gap: 2.2rem;
+      align-items: stretch;   /* 👈 was: start */
+    }
+
+    @media (max-width: 960px) {
+      .contact-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .contact-list {
+      list-style: none;
+      display: grid;
+      gap: 0.95rem;
+      font-size: 0.9rem;
+    }
+
+    .contact-item-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+      margin-bottom: 0.1rem;
+    }
+
+    .contact-item-value {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    .contact-item-value a {
+      color: #a5b4fc;
+    }
+
+    .contact-item-value a:hover {
+      text-decoration: underline;
+    }
+
+    .contact-form {
+      display: grid;
+      gap: 0.85rem;
+      font-size: 0.85rem;
+    }
+
+    .field-group {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    input,
+    textarea {
+      border-radius: 0.9rem;
+      border: 1px solid rgba(148, 163, 184, 0.65);
+      background: rgba(15, 23, 42, 0.96);
+      padding: 0.65rem 0.8rem;
+      color: #e5e7eb;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      transition:
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        background var(--transition-fast),
+        transform var(--transition-fast);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: rgba(148, 163, 184, 0.76);
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: rgba(34, 197, 94, 0.9);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
+      background: rgba(15, 23, 42, 1);
+      transform: translateY(-1px);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .form-footnote {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+    }
+
+    .contact-cta {
+      margin-top: 1.3rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: center;
+      font-size: 0.82rem;
+      color: var(--text-soft);
+    }
+
+    /* CTA STRIP */
+
+    .cta-strip {
+      margin-top: 3.1rem;
+      background:
+        radial-gradient(circle at 0 0, rgba(34, 197, 94, 0.18), transparent 55%),
+        rgba(15, 23, 42, 0.98);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      padding: 1.3rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .cta-strip h3 {
+      font-size: 1.02rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .cta-strip p {
+      font-size: 0.86rem;
+      color: var(--text-soft);
+    }
+
+    .cta-strip-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+    }
+
+    /* FOOTER */
+
+    footer {
+      border-top: 1px solid rgba(30, 64, 175, 0.45);
+      padding: 1.7rem 0 2.3rem;
+      margin-top: 1rem;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .footer-inner span strong {
+      color: #e5e7eb;
+    }
+
+    /* RESPONSIVE TWEAKS */
+
+    @media (max-width: 640px) {
+      .section-header {
+        align-items: flex-start;
+      }
+
+      h2.section-title {
+        font-size: 1.4rem;
+      }
+
+      .card {
+        padding: 1.4rem 1.3rem;
+      }
+
+      .cta-strip {
+        padding: 1.15rem 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- HEADER / NAV -->
+  <header class="site-header">
+    <div class="navbar-wrapper">
+      <div class="container nav-container">
+        <a href="#hero" class="brand">
+          <div class="brand-badge">
+            <div class="brand-badge-inner">S</div>
+          </div>
+          <div>
+            <div class="brand-text-heading">Smart Business Solutions</div>
+            <div class="brand-text-sub">SME Consulting • Training • Digitalization</div>
+          </div>
+        </a>
+
+        <button class="nav-toggle" aria-expanded="false" aria-label="Toggle navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <nav class="nav-links" data-nav-menu>
+          <a href="#about">About</a>
+          <a href="#services">Services</a>
+          <a href="#approach">Approach</a>
+          <a href="#impact">Impact</a>
+          <a href="#contact">Contact</a>
+          <button
+            class="btn-outline nav-cta-inline"
+            type="button"
+            data-scroll-target="#contact"
+          >
+            <span>Book a Consultation</span>
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main >
+    <!-- HERO -->
+    <section id="hero" class="hero">
+      <div class="container hero-inner reveal">
+        <div class="reveal reveal-delay-1">
+          <div class="pill-label">
+            <div class="pill-dot">◎</div>
+            <span class="pill-strong">Partner to ambitious SMEs</span>
+            <span>— Strategy, skills &amp; digital systems</span>
+          </div>
+
+          <h1 class="hero-title">
+            Smart <span class="gradient">business solutions</span> for Somaliland’s SMEs.
+          </h1>
+
+          <p class="hero-subtitle">
+            Smart Business Solutions (SBS) is a Somaliland-based consulting firm that helps
+            <strong>entrepreneurs and small &amp; medium enterprises</strong> to start, improve and scale.
+            We combine practical advisory, ILO SIYB entrepreneurship training and tailored digitalization
+            solutions.
+          </p>
+
+          <p class="hero-segment">
+            We work with founders, SME owners, schools, clinics, construction companies and development
+            partners who want practical, measurable results – not theory.
+          </p>
+
+          <p class="hero-somali">
+            Waxaan taageernaa ganacsatada &amp; SMEs Somaliland adigoo helaya talo-ganacsi, tababar ILO SIYB ah
+            iyo nidaamyo digital ah oo kaa caawiya inaad si xirfad leh u maamusho oo u korto ganacsigaaga.
+          </p>
+
+          <div class="hero-actions">
+            <button class="btn-primary" type="button" data-scroll-target="#contact">
+              <span>Book a Consultation</span>
+              <span class="btn-icon">↗</span>
+            </button>
+            <button class="btn-ghost" type="button" data-scroll-target="#services">
+              <span>Explore Services</span>
+            </button>
+          </div>
+
+          <div class="hero-meta">
+            <span><strong>ILO SIYB</strong> entrepreneurship programmes</span>
+            <span><strong>Advisory • Training • SaaS</strong> under one partner</span>
+          </div>
+        </div>
+
+        <aside class="hero-card reveal reveal-delay-2">
+          <div class="hero-card-inner">
+            <div class="hero-card-kicker">SBS at a glance</div>
+            <h2>Consulting, capacity building &amp; digital tools in one partner.</h2>
+            <p>
+              We blend local market insight with global best practices to support SMEs across Somaliland – from
+              idea generation and business planning to operational excellence and digitalization.
+            </p>
+
+            <div class="hero-tag-grid">
+              <span class="hero-tag-pill">SME strategy &amp; growth advisory</span>
+              <span class="hero-tag-pill">Financial &amp; operational support</span>
+              <span class="hero-tag-pill">ILO SIYB: GYBI, SYB, IYB, EYB</span>
+              <span class="hero-tag-pill">School &amp; clinic management systems</span>
+              <span class="hero-tag-pill">ERP &amp; construction project tools</span>
+            </div>
+
+            <div class="hero-impact-row">
+              <div class="hero-impact-col">
+                <strong>100+ clients</strong>
+                <span>Schools, centres, clinics and businesses using SBS &amp; Saafi Systems solutions.</span>
+              </div>
+              <div class="hero-impact-col">
+                <strong>SME-first focus</strong>
+                <span>Built around the realities of entrepreneurs and growing SMEs in Somaliland.</span>
+              </div>
+            </div>
+
+            <div class="stat-pill">
+              <strong>Hargeisa-based</strong>
+              <span>Serving SMEs &amp; partners across Somaliland.</span>
+            </div>
+          </div>
+
+          <div class="glow-orbit"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about">
+      <div class="container">
+        <header class="section-header reveal">
+          <div class="section-header-main" >
+            <h2 class="section-title" >
+              About SBS
+              <span class="section-badge">Who we are</span>
+            </h2>
+            <h3 class="section-subtitle">
+              A specialist SME consulting and development firm rooted in Somaliland.
+            </h3>
+          </div>
+          <p class="section-kicker">
+            Smart Business Solutions (SBS) is a dedicated SME development and consulting firm in Somaliland.
+            We provide advisory, entrepreneurship training and digitalization through a strategic partnership
+            with Saafi Systems.
+          </p>
+        </header>
+
+        <div class="about-grid">
+          <article class="card reveal reveal-delay-1">
+            <div class="eyebrow">Vision</div>
+            <h3 class="card-title">Building a competitive, digital SME sector.</h3>
+            <p>
+              Our vision is to become the leading SME development and consulting firm in Somaliland, helping to
+              create a <strong>competitive and digitally enabled private sector</strong> that can thrive
+              regionally and globally.
+            </p>
+
+            <ul class="kv-list">
+              <li>
+                <span class="kv-label">Regional outlook.</span>
+                We support Somaliland to build a resilient, opportunity-rich SME ecosystem that attracts
+                investment and talent.
+              </li>
+              <li>
+                <span class="kv-label">Digital future.</span>
+                We guide enterprises from paper-based processes to robust, integrated digital systems that make
+                day-to-day management easier.
+              </li>
+            </ul>
+          </article>
+
+          <article class="card reveal reveal-delay-2">
+            <div class="eyebrow">Mission</div>
+            <h3 class="card-title">Equipping entrepreneurs with skills, systems &amp; support.</h3>
+            <p>
+              Our mission is to equip entrepreneurs and SMEs with the
+              <strong>skills, systems and support</strong> they need to start, manage and grow sustainable
+              businesses that create jobs and long-term impact.
+            </p>
+
+            <ul class="kv-list">
+              <li>Deliver hands-on entrepreneurship training based on the ILO SIYB programme.</li>
+              <li>Offer tailored consulting in strategy, operations and financial planning.</li>
+              <li>
+                Provide digital tools that simplify management for schools, clinics, SMEs and construction
+                firms.
+              </li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="cta-strip reveal reveal-delay-3">
+          <div>
+            <h3>Ready to strengthen your SME or programme?</h3>
+            <p>
+              Whether you need consulting support, entrepreneurship training or digital systems, SBS can help
+              you design and deliver the right solution.
+            </p>
+          </div>
+          <div class="cta-strip-actions">
+            <button class="btn-primary" type="button" data-scroll-target="#contact">
+              <span>Talk to our team</span>
+            </button>
+            <button class="btn-ghost" type="button" data-scroll-target="#services">
+              <span>View service overview</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SERVICES -->
+    <section id="services">
+      <div class="container">
+        <header class="section-header reveal">
+          <div class="section-header-main">
+            <h2 class="section-title">
+              Our Core Services
+              <span class="section-badge">What we do</span>
+            </h2>
+            <h3 class="section-subtitle">
+              Integrated advisory, training and digitalization tailored to the needs of SMEs in Somaliland.
+            </h3>
+          </div>
+          <p class="section-kicker">
+            We provide integrated support across advisory, entrepreneurship training and technology – designed
+            specifically for entrepreneurs, SMEs and ecosystem partners in Somaliland.
+          </p>
+        </header>
+
+        <div class="services-grid">
+          <!-- Service 1 -->
+          <article class="card service-card reveal reveal-delay-1">
+            <div class="service-tagline">Advisory</div>
+            <div class="service-icon">◆</div>
+            <h3 class="card-title">SME Consulting &amp; Advisory</h3>
+            <p>
+              Practical, data-informed consulting to strengthen your business model, operations and financial
+              health.
+            </p>
+            <ul class="service-list">
+              <li>Business model design and validation.</li>
+              <li>Strategy and growth planning for 1–3 years.</li>
+              <li>Financial planning and bookkeeping support.</li>
+              <li>Operational improvement and process design.</li>
+            </ul>
+          </article>
+
+          <!-- Service 2 -->
+          <article class="card service-card reveal reveal-delay-2">
+            <div class="service-tagline">Entrepreneurship</div>
+            <div class="service-icon">○</div>
+            <h3 class="card-title">ILO SIYB Entrepreneurship Training</h3>
+            <p>
+              A structured training pathway that supports entrepreneurs at every stage of their journey – from
+              idea to expansion.
+            </p>
+            <ul class="service-list">
+              <li>GYBI – Generate Your Business Idea.</li>
+              <li>SYB – Start Your Business and build a bankable plan.</li>
+              <li>IYB – Improve Your Business performance and operations.</li>
+              <li>EYB – Expand Your Business and scale sustainably.</li>
+              <li>Ongoing mentoring and coaching for graduates.</li>
+            </ul>
+          </article>
+
+          <!-- Service 3 -->
+          <article class="card service-card reveal reveal-delay-3">
+            <div class="service-tagline">Digitalization</div>
+            <div class="service-icon">▢</div>
+            <h3 class="card-title">Business Digitalization Solutions</h3>
+            <p>
+              Cloud-based software (SaaS) delivered through our partnership with Saafi Systems to digitize your
+              critical processes.
+            </p>
+            <ul class="service-list">
+              <li>ERP and integrated business management systems.</li>
+              <li>School Management Systems for admissions, fees and exams.</li>
+              <li>Electronic Medical Records (EMR) for clinics and health centres.</li>
+              <li>Construction and project management tools for contractors.</li>
+            </ul>
+          </article>
+
+          <!-- Service 4 -->
+          <article class="card service-card reveal">
+            <div class="service-tagline">Capacity</div>
+            <div class="service-icon">✧</div>
+            <h3 class="card-title">Coaching &amp; Mentoring</h3>
+            <p>
+              Relationship-based support that keeps entrepreneurs accountable, focused and aligned with their
+              goals.
+            </p>
+            <ul class="service-list">
+              <li>One-to-one business coaching for founders.</li>
+              <li>Leadership mentoring for key decision-makers.</li>
+              <li>SME diagnostic reviews and practical action plans.</li>
+              <li>Implementation check-ins and follow-up sessions.</li>
+            </ul>
+          </article>
+
+          <!-- Service 5 -->
+          <article class="card service-card reveal reveal-delay-1">
+            <div class="service-tagline">Partnerships</div>
+            <div class="service-icon">∞</div>
+            <h3 class="card-title">Donor &amp; NGO Programmes</h3>
+            <p>
+              Implementation partner for SME development, entrepreneurship and digitalization projects across
+              Somaliland.
+            </p>
+            <ul class="service-list">
+              <li>Programme design and curriculum development.</li>
+              <li>Training-of-trainers and large-scale rollout.</li>
+              <li>Monitoring of enterprise-level outcomes.</li>
+              <li>Local insight and stakeholder engagement support.</li>
+            </ul>
+          </article>
+
+          <!-- Service 6 -->
+          <article class="card service-card reveal reveal-delay-2">
+            <div class="service-tagline">Implementation</div>
+            <div class="service-icon">≋</div>
+            <h3 class="card-title">Systems Deployment &amp; Support</h3>
+            <p>
+              Hands-on system implementation and change management to ensure digital tools are adopted and used
+              effectively.
+            </p>
+            <ul class="service-list">
+              <li>Requirements mapping and system configuration.</li>
+              <li>User training and documentation in simple language.</li>
+              <li>Continuous technical support and troubleshooting.</li>
+              <li>Performance review and ongoing optimisation.</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="services-cta reveal reveal-delay-3">
+          <p class="services-cta-text">
+            Not sure where to start? We can begin with a simple SME diagnostic or programme design workshop, then
+            recommend the right mix of advisory, training and technology.
+          </p>
+          <div class="services-cta-actions">
+            <button class="btn-primary" type="button" data-scroll-target="#contact">
+              <span>Schedule a discovery call</span>
+            </button>
+            <button class="btn-ghost" type="button" data-scroll-target="#approach">
+              <span>See how we work</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- APPROACH & IMPACT -->
+    <section id="approach">
+      <div class="container">
+        <header class="section-header reveal">
+          <div class="section-header-main">
+            <h2 class="section-title">
+              Our Approach
+              <span class="section-badge">How we work</span>
+            </h2>
+            <h3 class="section-subtitle">
+              A clear, step-by-step model that combines diagnostics, advisory support and digital tools.
+            </h3>
+          </div>
+          <p class="section-kicker">
+            Every engagement blends diagnostics, capability building and technology – all anchored in the
+            realities of the Somaliland market and your specific context.
+          </p>
+        </header>
+
+        <div class="approach-grid">
+          <article class="card reveal reveal-delay-1">
+            <ul class="steps">
+              <li>
+                <div class="step-index">1</div>
+                <div class="step-body">
+                  <strong>Diagnostic &amp; SME assessment</strong>
+                  <span>
+                    We begin by understanding your business model, customers, finances and operations. This
+                    highlights key constraints, risks and opportunities for growth.
+                  </span>
+                </div>
+              </li>
+              <li>
+                <div class="step-index">2</div>
+                <div class="step-body">
+                  <strong>Tailored advisory &amp; training package</strong>
+                  <span>
+                    We design a customised mix of consulting, coaching and ILO SIYB-based training – using
+                    practical, local examples and tools you can apply immediately.
+                  </span>
+                </div>
+              </li>
+              <li>
+                <div class="step-index">3</div>
+                <div class="step-body">
+                  <strong>Digital systems implementation</strong>
+                  <span>
+                    Where relevant, we deploy school, clinic, ERP or construction systems to digitize your
+                    processes, improve data quality and strengthen decision-making.
+                  </span>
+                </div>
+              </li>
+              <li>
+                <div class="step-index">4</div>
+                <div class="step-body">
+                  <strong>Long-term follow-up &amp; support</strong>
+                  <span>
+                    We stay on board as a trusted partner – reviewing progress, refining strategies and supporting
+                    your team so improvements are sustained over time.
+                  </span>
+                </div>
+              </li>
+            </ul>
+          </article>
+
+          <article class="card impact-card reveal reveal-delay-2" id="impact">
+            <div class="eyebrow">2025–2030 Ambition</div>
+            <h3 class="card-title">Scaling impact across Somaliland’s SME ecosystem.</h3>
+            <p>
+              SBS is committed to measurable, long-term impact through entrepreneurship, advisory and
+              digitalization. Our strategic goals for 2025–2030 are:
+            </p>
+
+            <div class="impact-metrics">
+              <div class="impact-metric">
+                <strong>5,000+</strong>
+                <span>
+                  Entrepreneurs trained through ILO SIYB and related programmes – from idea generation to
+                  expansion.
+                </span>
+              </div>
+              <div class="impact-metric">
+                <strong>500 SMEs</strong>
+                <span>
+                  Small and medium enterprises supported with structured consulting, coaching and systems
+                  deployment.
+                </span>
+              </div>
+              <div class="impact-metric">
+                <strong>10+ partners</strong>
+                <span>
+                  Strategic partnerships with donors, NGOs and ecosystem actors delivering SME-focused programmes.
+                </span>
+              </div>
+            </div>
+
+            <p class="impact-caption">
+              Together with our clients and partners, we aim to help build a digitally enabled, competitive SME
+              sector that generates inclusive growth and jobs across Somaliland.
+            </p>
+
+            <div class="impact-chip-row">
+              <span class="chip">Entrepreneurship &amp; SME development</span>
+              <span class="chip">Consulting &amp; advisory</span>
+              <span class="chip">Digitalization &amp; SaaS solutions</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact">
+      <div class="container">
+        <header class="section-header reveal">
+          <div class="section-header-main">
+            <h2 class="section-title">
+              Contact &amp; Location
+              <span class="section-badge">Let’s talk</span>
+            </h2>
+            <h3 class="section-subtitle">
+              Get in touch to discuss your SME, programme or digitalization needs.
+            </h3>
+          </div>
+          <p class="section-kicker">
+            Ready to explore a partnership, SME support programme or digitalization project? Reach out and we
+            will schedule a consultation.
+          </p>
+        </header>
+
+        <div class="contact-grid" style="height: ;">
+          <article class="card reveal reveal-delay-1">
+            <div class="eyebrow">Visit or reach us</div>
+            <h3 class="card-title">Hargeisa-based, serving Somaliland.</h3>
+            <ul class="contact-list">
+              <li>
+                <div class="contact-item-label">Office</div>
+                <div class="contact-item-value">
+                  Barsame Building, 3rd Floor<br />
+                  Hargeisa, Somaliland
+                </div>
+              </li>
+              <li>
+                <div class="contact-item-label">Email</div>
+                <div class="contact-item-value">
+                  <a href="mailto:info@sbs4consulting.com">info@sbs4consulting.com</a>
+                </div>
+              </li>
+              <li>
+                <div class="contact-item-label">Phone</div>
+                <div class="contact-item-value">
+                  <a href="tel:+252634505372">+252 63 450 5372</a>
+                </div>
+              </li>
+              <li>
+                <div class="contact-item-label">Website</div>
+                <div class="contact-item-value">
+                  <a
+                    href="https://www.sbs4consulting.com"
+                    target="_blank"
+                    rel="noreferrer"
+                  >www.sbs4consulting.com</a>
+                </div>
+              </li>
+            </ul>
+
+            <div class="contact-cta">
+              <span>Prefer to talk first?</span>
+              <button class="btn-ghost" type="button" data-scroll-target="#hero">
+                <span>Back to overview</span>
+              </button>
+            </div>
+          </article>
+
+          <article class="card reveal reveal-delay-2">
+            <div class="eyebrow">Enquiry form</div>
+            <h3 class="card-title">Tell us how we can support you.</h3>
+            <form class="contact-form" onsubmit="event.preventDefault();">
+              <div class="field-group">
+                <label for="name">Full name</label>
+                <input id="name" type="text" placeholder="Your name" />
+              </div>
+              <div class="field-group">
+                <label for="email">Email</label>
+                <input id="email" type="email" placeholder="you@example.com" />
+              </div>
+              <div class="field-group">
+                <label for="organisation">Organisation / SME</label>
+                <input
+                  id="organisation"
+                  type="text"
+                  placeholder="Your organisation or business name"
+                />
+              </div>
+              <div class="field-group">
+                <label for="topic">Service area of interest</label>
+                <input
+                  id="topic"
+                  type="text"
+                  placeholder="Consulting, training, digital systems…"
+                />
+              </div>
+              <div class="field-group">
+                <label for="message">How can we support you?</label>
+                <textarea
+                  id="message"
+                  placeholder="Briefly describe your needs or idea."
+                ></textarea>
+              </div>
+              <button class="btn-primary" type="submit">
+                <span>Submit enquiry</span>
+                <span class="btn-icon">✉</span>
+              </button>
+              <p class="form-footnote">
+                This form is provided for design/demo only. Connect it to your preferred email, CRM or form
+                handler to capture and respond to enquiries.
+              </p>
+            </form>
+          </article>
+        </div>
+
+        <div class="cta-strip reveal reveal-delay-3">
+          <div>
+            <h3>Let’s design the next step for your SME.</h3>
+            <p>
+              From a single training cycle to a multi-year programme or full digitalization rollout, SBS can
+              help you scope, plan and implement with confidence.
+            </p>
+          </div>
+          <div class="cta-strip-actions">
+            <button class="btn-primary" type="button" data-scroll-target="#contact">
+              <span>Book a consultation</span>
+            </button>
+            <button class="btn-outline" type="button" data-scroll-target="#services">
+              <span>Review services</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container footer-inner">
+      <span>
+        © <strong>Smart Business Solutions</strong> — SME Consulting, Entrepreneurship Training &amp;
+        Digitalization in Somaliland.
+      </span>
+      <span>Single-page profile site designed for clarity and quick review.</span>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile navigation toggle
+    (function () {
+      const navToggle = document.querySelector(".nav-toggle");
+      const navMenu = document.querySelector("[data-nav-menu]");
+
+      if (!navToggle || !navMenu) return;
+
+      navToggle.addEventListener("click", () => {
+        const isOpen = navMenu.classList.toggle("nav-open");
+        navToggle.classList.toggle("is-active", isOpen);
+        navToggle.setAttribute("aria-expanded", String(isOpen));
+      });
+
+      navMenu.querySelectorAll("a, button").forEach((item) => {
+        item.addEventListener("click", () => {
+          if (navMenu.classList.contains("nav-open")) {
+            navMenu.classList.remove("nav-open");
+            navToggle.classList.remove("is-active");
+            navToggle.setAttribute("aria-expanded", "false");
+          }
+        });
+      });
+    })();
+
+    // Smooth scroll for buttons with data-scroll-target
+    document.querySelectorAll("[data-scroll-target]").forEach((el) => {
+      el.addEventListener("click", () => {
+        const targetSelector = el.getAttribute("data-scroll-target");
+        if (!targetSelector) return;
+        const target = document.querySelector(targetSelector);
+        if (target) target.scrollIntoView({ behavior: "smooth" });
+      });
+    });
+
+    // Reveal-on-scroll animation
+    (function () {
+      const reveals = document.querySelectorAll(".reveal");
+      if (!("IntersectionObserver" in window) || reveals.length === 0) {
+        reveals.forEach((el) => el.classList.add("is-visible"));
+        return;
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-visible");
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.14 }
+      );
+
+      reveals.forEach((el) => observer.observe(el));
+    })();
+  </script>
+</body>
+</html>

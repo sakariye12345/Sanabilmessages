@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sanabil Messages - Technical Report</title>
+    <style>
+        body {
+            font-family: "Calibri", "Arial", sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+            background: #fff;
+        }
+        h1 {
+            color: #2E5090;
+            border-bottom: 2px solid #2E5090;
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 24pt;
+        }
+        h2 {
+            color: #1a3c75;
+            margin-top: 30px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            font-size: 18pt;
+        }
+        h3 {
+            color: #444;
+            margin-top: 20px;
+            font-size: 14pt;
+        }
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        ul {
+            margin-bottom: 15px;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+        .code-block {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-left: 4px solid #2E5090;
+            font-family: "Courier New", monospace;
+            font-size: 0.9em;
+            margin: 20px 0;
+            white-space: pre-wrap;
+        }
+        .diagram {
+            border: 1px solid #ddd;
+            padding: 20px;
+            text-align: center;
+            background: #fafafa;
+            margin: 20px 0;
+            font-style: italic;
+            color: #666;
+        }
+        .footer {
+            margin-top: 50px;
+            font-size: 10pt;
+            color: #777;
+            text-align: center;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Sanabil Messages - Technical Architecture Report</h1>
+    <p><strong>Date:</strong> January 18, 2026</p>
+    <p><strong>Project:</strong> Sanabil Messages</p>
+
+    <h2>1. Executive Overview</h2>
+    <p>
+        <strong>Sanabil Messages</strong> is a specialized communication platform designed to bridge the gap between Sanabil Schools and parents. Unlike generic messaging apps (like WhatsApp), it provides a <strong>unidirectional, high-priority</strong> channel for critical school updates such as Absence Alerts, Exam Schedules, and Fee Notifications directly to the parent's device.
+    </p>
+    <p><strong>Core Value Proposition:</strong></p>
+    <ul>
+        <li><strong>Guaranteed Delivery:</strong> Uses a dedicated Push Notification pipeline to ensure messages are seen.</li>
+        <li><strong>Security:</strong> Strict "Allowlist" authentication ensures only registered parents can log in.</li>
+        <li><strong>Persistence:</strong> all messages are stored permanently in the database, meaning history is never lost even if notifications are dismissed.</li>
+    </ul>
+
+    <h2>2. System Architecture</h2>
+    <p>The system follows a <strong>Hub-and-Spoke</strong> architecture with three main pillars:</p>
+
+    <div class="diagram">
+        [ Architecture Diagram Conceptual View ]<br><br>
+        <strong>Backend (Db)</strong> ⬅️ ➡️ <strong>Dispatcher (Python)</strong> ➡️ <strong>Cloud (Expo)</strong> ➡️ <strong>Mobile App</strong>
+    </div>
+
+    <h3>The Three Pillars:</h3>
+    <ol>
+        <li><strong>The Database (Supabase):</strong> The "Source of Truth". It holds Student data, Parent allowlists, and the Message Queue.</li>
+        <li><strong>The Mobile App (React Native):</strong> The user interface. It handles Registration, Token Management, and displaying the Inbox.</li>
+        <li><strong>The Dispatcher (Python):</strong> The "Postman". A backend service that connects the Database to the Push Notification Cloud ("The bridge").</li>
+    </ol>
+
+    <h2>3. How It Works (Internal Logic)</h2>
+    <p>The system operates on two critical workflows:</p>
+
+    <h3>Workflow A: Device Registration (The "Handshake")</h3>
+    <p>Before a parent can receive messages, the system must "know" their device.</p>
+    <ul>
+        <li><strong>Login:</strong> User enters phone number (e.g., +252...).</li>
+        <li><strong>Verification:</strong> The App checks the 'allowed_parents' table. If allowed, an OTP is verified.</li>
+        <li><strong>Token Generation:</strong> The App calls the operating system to get a unique digital address called a <strong>Push Token</strong>.</li>
+        <li><strong>Sync:</strong> The App saves this token to the 'user_devices' table in the database, linking it to that specific parent.</li>
+    </ul>
+
+    <h3>Workflow B: Message Delivery (The "Pipeline")</h3>
+    <p>When the school sends a message (e.g., "Absence Alert"):</p>
+    <ul>
+        <li><strong>Queueing:</strong> The message is inserted into the 'message_recipients' table with status 'pending'.</li>
+        <li><strong>Dispatcher Loop:</strong> The Python script wakes up every 5 seconds and asks the DB: <em>"Any pending messages?"</em></li>
+        <li><strong>Processing:</strong> If a message is found, the Dispatcher looks up the active Push Token for that parent.</li>
+        <li><strong>Dispatch:</strong> The Dispatcher sends the payload to the Expo Push API (Cloud).</li>
+        <li><strong>Completion:</strong> The Dispatcher marks the message as 'sent' in the database (to prevent duplicates).</li>
+    </ul>
+
+    <h2>4. Key Components & Code Logic</h2>
+
+    <h3>A. The Dispatcher (push_dispatcher.py)</h3>
+    <p>This is the most critical backend component. It automates the delivery process so the school admin panel never freezes while sending thousands of messages. It decouples the "Sending" action from the "Delivery" action.</p>
+
+    <h3>B. Mobile Logic (notifications.ts)</h3>
+    <p>This component manages integration with Android/iOS. Crucially, it includes <strong>Simulation Logic</strong>: it detects if the app is running in a Simulator (Expo Go) or a Real Device (APK) and adjusts the token generation accordingly to prevent crashes.</p>
+
+    <h3>C. The Inbox (inbox.tsx)</h3>
+    <p>The main dashboard. It queries the database directly. This ensures that even if a Push Notification is missed, the message data is always available in the list (Offline-First approach).</p>
+
+    <h2>5. Development Roadmap</h2>
+    <ul>
+        <li><strong>Phase 1 (Completed):</strong> Database Building, Authentication System, and Simulation Mode.</li>
+        <li><strong>Phase 2 (Completed):</strong> Core Logic, Dispatcher Automation, and Inbox Real-time Connection.</li>
+        <li><strong>Phase 3 (Current):</strong> Production Build (APK). We are compiling the native Android application to enable real vibration and background services.</li>
+    </ul>
+
+    <h2>6. Summary</h2>
+    <p>
+        "Sanabil Messages is not just a chat app; it is a <strong>Broadcast Infrastructure</strong>. We built it with a 'Guaranteed Delivery' mindset. By separating the Mobile App from the Dispatching Logic, we ensure that the system can scale to thousands of parents. The architecture relies on robust cloud standards to ensure reliability and security."
+    </p>
+
+    <div class="footer">
+        Generated by System Architecture Analysis Tool
+    </div>
+
+</body>
+</html>

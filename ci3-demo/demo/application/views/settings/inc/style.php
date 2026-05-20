@@ -1,0 +1,59 @@
+<style type="text/css">
+	#table_row {
+    background-color: #f2f2f2;
+     color: #543e31;
+  }
+  #table_button {
+    background-color: #f2f2f2;
+     color: #543e31;
+     font-weight: bold;
+  }
+    
+thead {
+    background-color: red		;
+    color: #FFFFFF;
+}
+
+
+</style>
+
+
+
+<!-- My custom style -->
+  <style type="text/css">
+    @media print {
+      
+.table th {
+      
+        background-color: #FFFFFF !important;
+ 
+      }
+
+
+.table th {
+      
+       color: #000000  !important;
+ 
+      }
+
+
+
+
+
+         .table td {
+      background-color: transparent !important;
+    }
+
+
+.bg-success {
+        background-color: #0000FF		 !important;
+
+      }
+
+
+         .table th {
+      background-color: transparent !important;
+    }
+
+}
+  </style>

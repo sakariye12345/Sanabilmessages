@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نموذج الكشف - Transcript</title>
+    
+    <style>
+        body {
+            /* Background matching a PDF viewer look */
+            background-color: #333333; 
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            /* Classic formal Arabic font */
+            font-family: 'Times New Roman', 'Traditional Arabic', serif; 
+        }
+
+        .a4-container {
+            background-color: white;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+
+        /* Header Section */
+        .header-title {
+            text-align: center;
+            color: #006064; /* Teal color matching the image */
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .student-info-container {
+            display: flex;
+            justify-content: space-between;
+            color: #006064; /* Teal color */
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* Table Styling */
+        table.main-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px; /* tight spacing between tables */
+            border: 1px solid black;
+        }
+
+        .main-table th, .main-table td {
+            border: 1px solid black;
+            padding: 5px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Level Header (Blue Background) */
+        .level-header {
+            background-color: #005eb8; /* Royal Blue */
+            color: white;
+        }
+
+        /* Column Headers (Gray Background) */
+        .col-header {
+            background-color: #8c8c8c; /* Gray */
+            color: white;
+        }
+
+        /* Column widths to match image (الرقم is small, المواد is wide) */
+        .col-num { width: 15%; }
+        .col-subject { width: 60%; }
+        .col-grade { width: 25%; }
+
+        /* Data Rows Text Color */
+        .data-row td {
+            color: #0000cc; /* Bright Blue */
+        }
+
+        /* Footer / Summary Row Styling (Nested Table to divide into 4 columns evenly) */
+        .footer-cell {
+            padding: 0 !important;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: none;
+            margin: 0;
+        }
+
+        .footer-table td {
+            width: 25%;
+            border: none;
+            border-left: 1px solid black; /* inner dividers */
+            padding: 5px;
+            color: #0000cc;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .footer-table td:last-child {
+            border-left: none; /* remove border on the leftmost cell */
+        }
+
+        /* Print adjustments */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+            .a4-container {
+                box-shadow: none;
+                width: 100%;
+                padding: 10mm;
+            }
+            .level-header, .col-header {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="a4-container">
+        
+        <!-- Document Title -->
+        <div class="header-title">كشف الدّرجات لمستويات دبلوم اللغة العربية</div>
+        
+        <!-- Student Info -->
+        <div class="student-info-container">
+            <div>اسم الطالب/ـة : إبراهيم عبد الله إسماعيل</div>
+            <div>رقم الطالب/ـة : M076</div>
+        </div>
+
+        <!-- Level 1 -->
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th colspan="3" class="level-header">المستوى الأول</th>
+                </tr>
+                <tr>
+                    <th class="col-header col-num">الرقم</th>
+                    <th class="col-header col-subject">المواد الدّراسيّة</th>
+                    <th class="col-header col-grade">الدرجات</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="data-row"><td>1</td><td>مهارة الحوار</td><td>61</td></tr>
+                <tr class="data-row"><td>2</td><td>مهارة التعبير</td><td>56</td></tr>
+                <tr class="data-row"><td>3</td><td>النحو</td><td>66</td></tr>
+                <tr class="data-row"><td>4</td><td>الخط</td><td>70</td></tr>
+                <tr>
+                    <td colspan="3" class="footer-cell">
+                        <table class="footer-table">
+                            <tr>
+                                <td>المجموع: 253</td>
+                                <td>المعدل: 63.25</td>
+                                <td>النتيجة: ناجح</td>
+                                <td>التقدير: متوسط</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Level 2 -->
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th colspan="3" class="level-header">المستوى الثاني</th>
+                </tr>
+                <tr>
+                    <th class="col-header col-num">الرقم</th>
+                    <th class="col-header col-subject">المواد الدّراسيّة</th>
+                    <th class="col-header col-grade">الدرجات</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="data-row"><td>1</td><td>مهارة الحوار</td><td>60</td></tr>
+                <tr class="data-row"><td>2</td><td>الحوار التطبيقي</td><td>90</td></tr>
+                <tr class="data-row"><td>3</td><td>مهارة التعبير</td><td>54</td></tr>
+                <tr class="data-row"><td>4</td><td>مهارة القراءة</td><td>56</td></tr>
+                <tr class="data-row"><td>5</td><td>فهم المسموع</td><td>75</td></tr>
+                <tr class="data-row"><td>6</td><td>الخط</td><td>75</td></tr>
+                <tr>
+                    <td colspan="3" class="footer-cell">
+                        <table class="footer-table">
+                            <tr>
+                                <td>المجموع: 410</td>
+                                <td>المعدل: 68.33</td>
+                                <td>النتيجة: ناجح</td>
+                                <td>التقدير: جيد</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Level 3 -->
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th colspan="3" class="level-header">المستوى الثالث</th>
+                </tr>
+                <tr>
+                    <th class="col-header col-num">الرقم</th>
+                    <th class="col-header col-subject">المواد الدّراسيّة</th>
+                    <th class="col-header col-grade">الدرجات</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="data-row"><td>1</td><td>مهارة الحوار</td><td>60</td></tr>
+                <tr class="data-row"><td>2</td><td>مهارة التعبير</td><td>62</td></tr>
+                <tr class="data-row"><td>3</td><td>مهارة القراءة</td><td>79</td></tr>
+                <tr class="data-row"><td>4</td><td>البلاغة</td><td>40</td></tr>
+                <tr class="data-row"><td>5</td><td>الإملاء</td><td>59</td></tr>
+                <tr>
+                    <td colspan="3" class="footer-cell">
+                        <table class="footer-table">
+                            <tr>
+                                <td>المجموع: 300</td>
+                                <td>المعدل: 60</td>
+                                <td>النتيجة: ناجح</td>
+                                <td>التقدير: متوسط</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Level 4 -->
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th colspan="3" class="level-header">المستوى الرابع</th>
+                </tr>
+                <tr>
+                    <th class="col-header col-num">الرقم</th>
+                    <th class="col-header col-subject">المواد الدّراسيّة</th>
+                    <th class="col-header col-grade">الدرجات</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="data-row"><td>1</td><td>مهارة الحوار</td><td>87</td></tr>
+                <tr class="data-row"><td>2</td><td>مهارة القراءة</td><td>79</td></tr>
+                <tr class="data-row"><td>3</td><td>مهارة التعبير</td><td>62</td></tr>
+                <tr class="data-row"><td>4</td><td>الإلقاء والخطابة</td><td>90</td></tr>
+                <tr class="data-row"><td>5</td><td>أدب</td><td>84</td></tr>
+                <tr class="data-row"><td>6</td><td>بحث التخرج</td><td>100</td></tr>
+                <tr>
+                    <td colspan="3" class="footer-cell">
+                        <table class="footer-table">
+                            <tr>
+                                <td>المجموع: 502</td>
+                                <td>المعدل: 83.66</td>
+                                <td>النتيجة: ناجح</td>
+                                <td>التقدير: جيد جدا</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+
+</body>
+</html>

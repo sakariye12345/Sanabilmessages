@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard — AdminLTE-style</title>
+
+  <!-- Bootstrap 5 (grid/utilities/components) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome (icons) -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+
+  <!-- DataTables (Bootstrap 5 skin) -->
+  <link href="https://cdn.datatables.net/v/bs5/dt-2.1.8/datatables.min.css" rel="stylesheet"/>
+
+  <!-- AdminLTE-like skin (custom) -->
+  <style>
+    :root{
+      --primary:#3c8dbc; /* AdminLTE-ish; 0d6efd acceptable */
+      --info:#17a2b8;
+      --success:#28a745;
+      --warning:#ffc107;
+      --danger:#dc3545;
+      --dark:#343a40;
+      --light:#f8f9fa;
+      --navy:#001f3f;
+
+      --bg:#f4f6f9;
+      --card-bg:#ffffff;
+      --text:#212529;
+      --muted:#6c757d;
+      --border:#dee2e6;
+      --sidebar-bg:#1f2d3d;
+      --sidebar-bg-hover:#243447;
+      --sidebar-text:#c2c7d0;
+      --sidebar-active:#ffffff;
+    }
+    .theme-dark{
+      --bg:#0f141a;
+      --card-bg:#121a22;
+      --text:#e6e6e6;
+      --muted:#9aa4af;
+      --border:#263241;
+      --sidebar-bg:#0d1116;
+      --sidebar-bg-hover:#151b23;
+      --sidebar-text:#b8c0cc;
+      --sidebar-active:#ffffff;
+    }
+
+    html,body{height:100%;}
+    body{
+      background:var(--bg);
+      color:var(--text);
+      font-size:0.95rem;
+      line-height:1.35;
+    }
+    .app{
+      display:grid;
+      grid-template-columns: 260px 1fr;
+      grid-template-rows: 56px 1fr 38px;
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar content"
+        "sidebar footer";
+      min-height:100dvh;
+    }
+
+    /* Topbar */
+    .topbar{
+      grid-area:topbar;
+      background:#fff;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:0 .75rem;
+      position:sticky; top:0; z-index:1030;
+      background:var(--card-bg);
+    }
+    .brand{
+      display:flex; align-items:center; gap:.5rem; font-weight:700;
+      color:var(--primary); text-decoration:none;
+    }
+    .brand .logo{
+      width:30px;height:30px;border-radius:.5rem;background:var(--primary);display:inline-grid;place-items:center;color:#fff;
+    }
+    .topbar .search{
+      flex:1; max-width:520px;
+    }
+    .topbar .icon-btn{
+      border:none;background:transparent;padding:.5rem;border-radius:.5rem;
+    }
+    .topbar .icon-btn:hover{background:rgba(0,0,0,.05);}
+
+    /* Sidebar */
+    .sidebar{
+      grid-area:sidebar;
+      background:var(--sidebar-bg);
+      color:var(--sidebar-text);
+      overflow:auto;
+      padding-bottom:1rem;
+    }
+    .sidebar .user-panel{
+      padding:1rem .75rem .5rem .75rem;
+      display:flex; gap:.75rem; align-items:center;
+    }
+    .sidebar .user-panel img{
+      width:38px; height:38px; border-radius:50%;
+    }
+    .sidebar .nav{
+      list-style:none; padding:0; margin: .25rem 0;
+    }
+    .sidebar .nav-link{
+      color:var(--sidebar-text);
+      display:flex; align-items:center; gap:.75rem;
+      padding:.6rem .9rem; text-decoration:none;
+      border-left:3px solid transparent;
+      transition:background .15s, color .15s, border-color .15s;
+    }
+    .sidebar .nav-link .right{
+      margin-left:auto; opacity:.7;
+    }
+    .sidebar .nav-link:hover{ background:var(--sidebar-bg-hover); }
+    .sidebar .nav-link.active{
+      background:linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,0));
+      color:var(--sidebar-active); border-left-color:var(--primary);
+    }
+    .sidebar .treeview-menu{
+      display:none; padding-left:1.5rem;
+    }
+    .sidebar .treeview.open > .treeview-menu{ display:block; }
+    .sidebar .badge{
+      background:var(--primary);
+    }
+    .sidebar .form-control{
+      background:#0f1720; border-color:#1e2a36; color:#dce3ea;
+    }
+
+    /* Content */
+    .content-wrapper{
+      grid-area:content;
+      padding:1rem;
+      overflow:auto;
+    }
+    .content-header{
+      display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; margin-bottom:1rem;
+    }
+    .breadcrumb{
+      margin:0; --bs-breadcrumb-divider: '›';
+    }
+
+    /* Cards & utilities */
+    .card{
+      background:var(--card-bg);
+      border:1px solid var(--border);
+      border-radius:.5rem;
+      box-shadow:0 1px 1px rgba(0,0,0,.02);
+    }
+    .card-header{
+      padding:.6rem .75rem; border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .card-tools .btn{
+      --bs-btn-padding-y:.25rem; --bs-btn-padding-x:.5rem; --bs-btn-font-size:.85rem;
+    }
+    .small-box{
+      position:relative; overflow:hidden; border-radius:.5rem; color:#fff;
+      padding:1rem; min-height:108px;
+    }
+    .small-box .icon{
+      position:absolute; right:.75rem; bottom:-8px; font-size:64px; opacity:.15;
+    }
+    .small-box a{
+      color:#fff; text-decoration:underline; font-weight:500;
+    }
+    .bg-primary{ background:var(--primary) !important; }
+    .bg-info{ background:var(--info) !important; }
+    .bg-success{ background:var(--success) !important; }
+    .bg-warning{ background:var(--warning) !important; color:#1f2328; }
+    .bg-danger{ background:var(--danger) !important; }
+
+    .info-box{
+      display:flex; gap:.75rem; align-items:center; background:var(--card-bg);
+      border:1px solid var(--border); border-radius:.5rem; padding:.75rem;
+    }
+    .info-box .info-icon{
+      width:46px; height:46px; border-radius:.5rem; display:grid; place-items:center; color:#fff;
+    }
+    .progress{ height:.4rem; }
+
+    /* Footer */
+    .footer{
+      grid-area:footer; border-top:1px solid var(--border);
+      background:var(--card-bg); color:var(--muted);
+      display:flex; align-items:center; padding:0 .75rem; font-size:.85rem;
+    }
+
+    /* Offcanvas behavior (mobile) */
+    @media (max-width: 991.98px){
+      .app{
+        grid-template-columns: 0 1fr;
+        grid-template-areas:
+          "topbar topbar"
+          "content content"
+          "footer footer";
+      }
+      .sidebar{
+        position:fixed; left:0; top:56px; bottom:38px; width:260px; transform:translateX(-100%);
+        transition: transform .2s ease; z-index:1031;
+      }
+      .sidebar.open{ transform:translateX(0); }
+    }
+
+    /* RTL tweaks */
+    html[dir="rtl"] .sidebar .nav-link .right{ margin-right:auto; margin-left:0; }
+    html[dir="rtl"] .breadcrumb{ direction:rtl; }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <button id="btnSidebar" class="icon-btn d-lg-none" aria-label="Toggle sidebar">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
+      <a href="#" class="brand">
+        <span class="logo"><i class="fa-solid fa-gauge"></i></span>
+        <span>AdminLTE-style</span>
+      </a>
+
+      <form class="search ms-2 d-none d-md-block" role="search">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0"><i class="fa-solid fa-magnifying-glass"></i></span>
+          <input class="form-control border-start-0" placeholder="Search…" aria-label="Search" />
+        </div>
+      </form>
+
+      <div class="ms-auto d-flex align-items-center gap-1">
+        <button class="icon-btn position-relative" aria-label="Notifications" id="btnNoti">
+          <i class="fa-regular fa-bell"></i>
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">7</span>
+        </button>
+
+        <div class="dropdown">
+          <button class="icon-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <img src="https://i.pravatar.cc/32?img=12" class="rounded-circle me-1" alt="" />
+            <span class="d-none d-sm-inline">Taylor</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="#"><i class="fa-regular fa-user me-2"></i>Profile</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fa-solid fa-gear me-2"></i>Settings</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#"><i class="fa-solid fa-right-from-bracket me-2"></i>Sign out</a></li>
+          </ul>
+        </div>
+
+        <button id="btnTheme" class="btn btn-sm btn-outline-secondary ms-1" aria-pressed="false" title="Toggle dark mode">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+        <button id="btnRTL" class="btn btn-sm btn-outline-secondary ms-1" title="Toggle RTL">
+          RTL
+        </button>
+      </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar" aria-label="Sidebar">
+      <div class="user-panel">
+        <img src="https://i.pravatar.cc/64?img=27" alt="">
+        <div>
+          <div class="fw-semibold">Taylor Admin</div>
+          <small class="text-secondary">Online</small>
+        </div>
+      </div>
+
+      <div class="px-3 mb-2">
+        <input class="form-control form-control-sm" placeholder="Search menu…" />
+      </div>
+
+      <ul class="nav">
+        <li><a class="nav-link active" href="#"><i class="fa-solid fa-house"></i> <span>Dashboard</span> <span class="badge rounded-pill ms-auto">v1</span></a></li>
+
+        <li class="treeview">
+          <a class="nav-link" href="#"><i class="fa-solid fa-display"></i> <span>Widgets</span> <i class="fa-solid fa-angle-left right"></i></a>
+          <ul class="treeview-menu nav">
+            <li><a class="nav-link" href="#">Small Boxes</a></li>
+            <li><a class="nav-link" href="#">Info Boxes</a></li>
+          </ul>
+        </li>
+
+        <li class="treeview">
+          <a class="nav-link" href="#"><i class="fa-solid fa-chart-line"></i> <span>Charts</span> <i class="fa-solid fa-angle-left right"></i></a>
+          <ul class="treeview-menu nav">
+            <li><a class="nav-link" href="#">Chart.js</a></li>
+            <li><a class="nav-link" href="#">Sparkline</a></li>
+          </ul>
+        </li>
+
+        <li class="treeview">
+          <a class="nav-link" href="#"><i class="fa-regular fa-square"></i> <span>UI Elements</span> <span class="badge rounded-pill ms-auto bg-danger">New</span> <i class="fa-solid fa-angle-left right"></i></a>
+          <ul class="treeview-menu nav">
+            <li><a class="nav-link" href="#">General</a></li>
+            <li><a class="nav-link" href="#">Buttons</a></li>
+            <li><a class="nav-link" href="#">Modals & Alerts</a></li>
+          </ul>
+        </li>
+
+        <li class="treeview">
+          <a class="nav-link" href="#"><i class="fa-regular fa-pen-to-square"></i> <span>Forms</span> <i class="fa-solid fa-angle-left right"></i></a>
+          <ul class="treeview-menu nav">
+            <li><a class="nav-link" href="#">General Elements</a></li>
+            <li><a class="nav-link" href="#">Advanced</a></li>
+            <li><a class="nav-link" href="#">Editors</a></li>
+          </ul>
+        </li>
+
+        <li class="treeview">
+          <a class="nav-link" href="#"><i class="fa-solid fa-table"></i> <span>Tables</span> <i class="fa-solid fa-angle-left right"></i></a>
+          <ul class="treeview-menu nav">
+            <li><a class="nav-link" href="#">Simple tables</a></li>
+            <li><a class="nav-link" href="#">Data tables</a></li>
+          </ul>
+        </li>
+
+        <li><a class="nav-link" href="#"><i class="fa-regular fa-calendar-days"></i> <span>Calendar</span></a></li>
+        <li><a class="nav-link" href="#"><i class="fa-regular fa-envelope"></i> <span>Mailbox</span></a></li>
+
+        <li class="treeview">
+          <a class="nav-link" href="#"><i class="fa-regular fa-file-lines"></i> <span>Examples</span> <i class="fa-solid fa-angle-left right"></i></a>
+          <ul class="treeview-menu nav">
+            <li><a class="nav-link" href="#">Login</a></li>
+            <li><a class="nav-link" href="#">Register</a></li>
+            <li><a class="nav-link" href="#">404</a></li>
+            <li><a class="nav-link" href="#">500</a></li>
+          </ul>
+        </li>
+
+        <li><a class="nav-link" href="#"><i class="fa-solid fa-book"></i> <span>Documentation</span></a></li>
+      </ul>
+    </aside>
+
+    <!-- Content -->
+    <main class="content-wrapper" id="content" role="main">
+      <div class="content-header">
+        <div>
+          <h1 class="h4 mb-1">Dashboard v1</h1>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item active">Dashboard v1</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-1"></i>New</button>
+          <button class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-download me-1"></i>Export</button>
+        </div>
+      </div>
+
+      <!-- Row 1: Small boxes -->
+      <div class="row g-3">
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="small-box bg-primary">
+            <div class="d-block mb-1">New Orders</div>
+            <h2 class="fw-bold mb-2">1,245</h2>
+            <a href="#">More info →</a>
+            <i class="fa-solid fa-bag-shopping icon"></i>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="small-box bg-success">
+            <div class="d-block mb-1">Bounce Rate</div>
+            <h2 class="fw-bold mb-2">32%</h2>
+            <a href="#">More info →</a>
+            <i class="fa-solid fa-chart-simple icon"></i>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="small-box bg-warning">
+            <div class="d-block mb-1">User Registrations</div>
+            <h2 class="fw-bold mb-2">867</h2>
+            <a href="#" class="text-dark">More info →</a>
+            <i class="fa-regular fa-user icon"></i>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="small-box bg-info">
+            <div class="d-block mb-1">Unique Visitors</div>
+            <h2 class="fw-bold mb-2">12.4K</h2>
+            <a href="#">More info →</a>
+            <i class="fa-regular fa-compass icon"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Info boxes -->
+      <div class="row g-3 mt-1">
+        <div class="col-12 col-lg-4">
+          <div class="info-box">
+            <div class="info-icon bg-primary"><i class="fa-solid fa-cloud"></i></div>
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between"><strong>CPU Traffic</strong> <span>72%</span></div>
+              <div class="progress mt-2"><div class="progress-bar bg-primary" style="width:72%"></div></div>
+              <small class="text-secondary">Server #3, 2m ago</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="info-box">
+            <div class="info-icon bg-success"><i class="fa-solid fa-thumbs-up"></i></div>
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between"><strong>Likes</strong> <span>41,230</span></div>
+              <div class="progress mt-2"><div class="progress-bar bg-success" style="width:60%"></div></div>
+              <small class="text-secondary">+12% week over week</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="info-box">
+            <div class="info-icon bg-warning"><i class="fa-solid fa-cart-shopping"></i></div>
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between"><strong>Sales</strong> <span>$76.4K</span></div>
+              <div class="progress mt-2"><div class="progress-bar bg-warning" style="width:48%"></div></div>
+              <small class="text-secondary">This month</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Charts + Map -->
+      <div class="row g-3 mt-1">
+        <div class="col-12 col-xl-8">
+          <div class="card">
+            <div class="card-header">
+              <strong>Sales Overview</strong>
+              <div class="card-tools btn-group">
+                <button class="btn btn-sm btn-outline-secondary" data-chart-tab="area">Area</button>
+                <button class="btn btn-sm btn-outline-secondary" data-chart-tab="donut">Donut</button>
+                <button class="btn btn-sm btn-outline-secondary" data-card="collapse"><i class="fa-solid fa-minus"></i></button>
+                <button class="btn btn-sm btn-outline-danger" data-card="remove"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+            </div>
+            <div class="card-body">
+              <canvas id="chartArea" height="140"></canvas>
+              <canvas id="chartDonut" height="140" class="d-none"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+          <div class="card">
+            <div class="card-header">
+              <strong>Visitors</strong>
+              <div class="card-tools btn-group">
+                <button class="btn btn-sm btn-outline-secondary" data-card="collapse"><i class="fa-solid fa-minus"></i></button>
+                <button class="btn btn-sm btn-outline-danger" data-card="remove"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="ratio ratio-4x3 border rounded" id="map" aria-label="Map placeholder">
+                <div class="d-flex align-items-center justify-content-center text-secondary">Map Placeholder</div>
+              </div>
+              <div class="d-flex justify-content-between mt-3">
+                <div><i class="fa-solid fa-location-dot me-1"></i>USA <span class="text-secondary">8.4k</span></div>
+                <div><i class="fa-solid fa-location-dot me-1"></i>EU <span class="text-secondary">6.2k</span></div>
+                <div><i class="fa-solid fa-location-dot me-1"></i>APAC <span class="text-secondary">4.9k</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 4: Table + Chat + Todo + Calendar -->
+      <div class="row g-3 mt-1">
+        <div class="col-12 col-xxl-7">
+          <div class="card">
+            <div class="card-header">
+              <strong>Latest Orders</strong>
+              <div class="card-tools">
+                <button class="btn btn-sm btn-outline-secondary" data-card="collapse"><i class="fa-solid fa-minus"></i></button>
+                <button class="btn btn-sm btn-outline-danger" data-card="remove"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table id="orders" class="table table-striped align-middle" style="width:100%">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Item</th>
+                      <th>Status</th>
+                      <th>Popularity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><a href="#">OR9842</a></td><td>Call of Duty IV</td><td><span class="badge text-bg-success">Shipped</span></td><td>⭐⭐⭐⭐</td></tr>
+                    <tr><td><a href="#">OR1848</a></td><td>Samsung TV</td><td><span class="badge text-bg-warning">Pending</span></td><td>⭐⭐⭐☆☆</td></tr>
+                    <tr><td><a href="#">OR7429</a></td><td>iPhone 14</td><td><span class="badge text-bg-danger">Declined</span></td><td>⭐⭐⭐⭐⭐</td></tr>
+                    <tr><td><a href="#">OR7429</a></td><td>PlayStation 5</td><td><span class="badge text-bg-success">Delivered</span></td><td>⭐⭐⭐⭐</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-xxl-5">
+          <div class="row g-3">
+            <div class="col-12">
+              <!-- Direct Chat -->
+              <div class="card">
+                <div class="card-header">
+                  <strong>Direct Chat</strong>
+                  <div class="card-tools btn-group">
+                    <button class="btn btn-sm btn-outline-secondary" id="toggleContacts"><i class="fa-regular fa-address-book"></i></button>
+                    <button class="btn btn-sm btn-outline-secondary" data-card="collapse"><i class="fa-solid fa-minus"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" data-card="remove"><i class="fa-solid fa-xmark"></i></button>
+                  </div>
+                </div>
+                <div class="card-body" style="max-height:260px; overflow:auto;">
+                  <div class="d-flex gap-2 mb-3">
+                    <img src="https://i.pravatar.cc/36?img=22" class="rounded-circle" alt="">
+                    <div>
+                      <div class="fw-semibold">Sarah <small class="text-secondary">10:15 AM</small></div>
+                      <div>Hello! Can we move the release to Friday?</div>
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2 mb-3 justify-content-end text-end">
+                    <div>
+                      <div class="fw-semibold">You <small class="text-secondary">10:16 AM</small></div>
+                      <div>Friday works. I’ll update the timeline.</div>
+                    </div>
+                    <img src="https://i.pravatar.cc/36?img=12" class="rounded-circle" alt="">
+                  </div>
+                  <div class="d-flex gap-2 mb-3">
+                    <img src="https://i.pravatar.cc/36?img=3" class="rounded-circle" alt="">
+                    <div>
+                      <div class="fw-semibold">Alex <small class="text-secondary">10:18 AM</small></div>
+                      <div>FYI the API limits are increased.</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-footer">
+                  <div class="input-group">
+                    <input class="form-control" placeholder="Type Message..."/>
+                    <button class="btn btn-primary"><i class="fa-regular fa-paper-plane"></i></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <!-- To-Do List -->
+              <div class="card">
+                <div class="card-header">
+                  <strong>To-Do List</strong>
+                  <div class="card-tools btn-group">
+                    <button class="btn btn-sm btn-outline-secondary" data-card="collapse"><i class="fa-solid fa-minus"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" data-card="remove"><i class="fa-solid fa-xmark"></i></button>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <ul class="list-group" id="todo">
+                    <li class="list-group-item d-flex align-items-center">
+                      <i class="fa-solid fa-grip-vertical me-2 text-secondary"></i>
+                      <input class="form-check-input me-2" type="checkbox">Design QA for widgets <span class="badge text-bg-danger ms-auto">Today</span>
+                      <button class="btn btn-sm btn-link text-danger ms-2" data-delete><i class="fa-regular fa-trash-can"></i></button>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center">
+                      <i class="fa-solid fa-grip-vertical me-2 text-secondary"></i>
+                      <input class="form-check-input me-2" type="checkbox" checked>Draft docs sidebar
+                      <button class="btn btn-sm btn-link text-danger ms-auto" data-delete><i class="fa-regular fa-trash-can"></i></button>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center">
+                      <i class="fa-solid fa-grip-vertical me-2 text-secondary"></i>
+                      <input class="form-check-input me-2" type="checkbox">Prep release notes <span class="badge text-bg-warning ms-auto">This week</span>
+                      <button class="btn btn-sm btn-link text-danger ms-2" data-delete><i class="fa-regular fa-trash-can"></i></button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="card-footer">
+                  <div class="input-group">
+                    <input id="todoInput" class="form-control" placeholder="New task…">
+                    <button id="addTodo" class="btn btn-primary"><i class="fa-solid fa-plus"></i></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <!-- Calendar -->
+              <div class="card">
+                <div class="card-header">
+                  <strong>Calendar</strong>
+                  <div class="card-tools btn-group">
+                    <button class="btn btn-sm btn-outline-secondary" data-card="collapse"><i class="fa-solid fa-minus"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" data-card="remove"><i class="fa-solid fa-xmark"></i></button>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="prevMonth"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div id="calTitle" class="fw-semibold">October 2025</div>
+                    <button class="btn btn-sm btn-outline-secondary" id="nextMonth"><i class="fa-solid fa-chevron-right"></i></button>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-bordered mb-0" id="calendar">
+                      <thead class="table-light">
+                        <tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                  <div class="mt-2">
+                    <span class="badge text-bg-primary">Meeting</span>
+                    <span class="badge text-bg-success">Release</span>
+                    <span class="badge text-bg-warning">Reminder</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Forms demo -->
+      <div class="row g-3 mt-1">
+        <div class="col-12 col-lg-6">
+          <div class="card">
+            <div class="card-header"><strong>Form Elements</strong></div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fa-regular fa-envelope"></i></span>
+                  <input type="email" class="form-control" placeholder="you@example.com" required>
+                </div>
+                <div class="form-text">We'll never share your email.</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Select</label>
+                <select class="form-select">
+                  <option>Option A</option><option>Option B</option><option>Option C</option>
+                </select>
+              </div>
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="switch1" checked>
+                <label class="form-check-label" for="switch1">Enable feature</label>
+              </div>
+              <button class="btn btn-primary">Submit</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+          <div class="card">
+            <div class="card-header"><strong>Alerts & Callouts</strong></div>
+            <div class="card-body">
+              <div class="alert alert-primary" role="alert"><i class="fa-solid fa-circle-info me-1"></i>Primary alert—check it out!</div>
+              <div class="alert alert-warning" role="alert"><i class="fa-solid fa-triangle-exclamation me-1"></i>Heads up—this needs attention.</div>
+              <div class="p-3 border rounded" style="border-left:4px solid var(--success);">
+                <strong>Callout:</strong> Components match AdminLTE behavior (collapse, remove, badges).
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div>© 2025 Example Co. <span class="ms-2">AdminLTE-style demo.</span></div>
+      <div class="ms-auto">Made with Bootstrap, FA, Chart.js, DataTables</div>
+    </footer>
+  </div>
+
+  <!-- Bootstrap Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <!-- DataTables (Bootstrap 5) -->
+  <script src="https://cdn.datatables.net/v/bs5/dt-2.1.8/datatables.min.js"></script>
+
+  <!-- TypeScript compiler in browser + helper to run TS -->
+  <!-- In production, compile TS ahead-of-time; this is for single-file demo parity -->
+  <script src="https://cdn.jsdelivr.net/npm/typescript@5.6.3/lib/typescript.js"></script>
+  <script>
+    // simple in-browser TS loader: transpile <script type="text/typescript"> to JS and execute
+    (function(){
+      const tsScript = document.querySelector('script[type="text/typescript"]');
+      if(!tsScript) return;
+      const source = tsScript.textContent || "";
+      const out = ts.transpileModule(source, {
+        compilerOptions:{
+          target: ts.ScriptTarget.ES2020,
+          module: ts.ModuleKind.None,
+          removeComments: true
+        }
+      }).outputText;
+      const js = document.createElement('script');
+      js.type = 'module';
+      js.textContent = out;
+      document.body.appendChild(js);
+    })();
+  </script>
+
+  <!-- === App Logic (TypeScript) === -->
+  <script type="text/typescript" id="ts-entry">
+    // Types
+    type Nullable<T> = T | null;
+
+    // Helpers
+    const $ = <T extends Element = Element>(sel:string, ctx:Document|Element=document) => ctx.querySelector(sel) as Nullable<T>;
+    const $$ = <T extends Element = Element>(sel:string, ctx:Document|Element=document) => Array.from(ctx.querySelectorAll(sel)) as T[];
+
+    // Theme persistence
+    const THEME_KEY = 'demo.theme';
+    const RTL_KEY = 'demo.rtl';
+
+    function applyTheme(theme:'light'|'dark'){
+      document.body.classList.toggle('theme-dark', theme==='dark');
+      localStorage.setItem(THEME_KEY, theme);
+      const btn = $('#btnTheme') as HTMLButtonElement;
+      btn?.setAttribute('aria-pressed', String(theme==='dark'));
+      btn?.querySelector('i')?.classList.toggle('fa-sun', theme==='dark');
+      btn?.querySelector('i')?.classList.toggle('fa-moon', theme!=='dark');
+    }
+
+    function applyRTL(enabled:boolean){
+      document.documentElement.setAttribute('dir', enabled ? 'rtl' : 'ltr');
+      localStorage.setItem(RTL_KEY, enabled ? '1' : '0');
+    }
+
+    // Sidebar treeview
+    function initTreeview(){
+      $$('.sidebar .treeview > .nav-link').forEach(link=>{
+        link.addEventListener('click', (e)=>{
+          e.preventDefault();
+          const parent = link.parentElement!;
+          parent.classList.toggle('open');
+          const menu = parent.querySelector('.treeview-menu') as HTMLElement;
+          if(menu){
+            const open = parent.classList.contains('open');
+            link.setAttribute('aria-expanded', String(open));
+            menu.style.display = open ? 'block' : 'none';
+          }
+        });
+      });
+    }
+
+    // Cards: collapse/remove
+    function initCardTools(){
+      $$('[data-card="collapse"]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const card = (btn as HTMLElement).closest('.card') as HTMLElement;
+          const body = $('.card-body', card) as HTMLElement;
+          body?.classList.toggle('d-none');
+        });
+      });
+      $$('[data-card="remove"]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const card = (btn as HTMLElement).closest('.card') as HTMLElement;
+          card?.remove();
+        });
+      });
+    }
+
+    // Charts
+    function initCharts(){
+      const areaCanvas = $('#chartArea') as HTMLCanvasElement;
+      const donutCanvas = $('#chartDonut') as HTMLCanvasElement;
+
+      const areaChart = new (window as any).Chart(areaCanvas.getContext('2d'), {
+        type:'line',
+        data:{
+          labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+          datasets:[{
+            label:'Revenue',
+            data:[12,19,11,17,22,24,28,30,26,29,33,38],
+            fill:true, tension:.25
+          },{
+            label:'Costs',
+            data:[9,12,9,12,14,16,18,19,17,18,21,23],
+            fill:true, tension:.25
+          }]
+        },
+        options:{
+          responsive:true,
+          plugins:{ legend:{ position:'bottom' } },
+          scales:{ y:{ beginAtZero:true } }
+        }
+      });
+
+      const donutChart = new (window as any).Chart(donutCanvas.getContext('2d'), {
+        type:'doughnut',
+        data:{
+          labels:['Online','Retail','Wholesale'],
+          datasets:[{ data:[56,28,16] }]
+        },
+        options:{ plugins:{ legend:{ position:'bottom' } } }
+      });
+
+      // Tab toggles
+      $$<HTMLButtonElement>('[data-chart-tab]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const tab = btn.getAttribute('data-chart-tab');
+          if(tab==='area'){
+            areaCanvas.classList.remove('d-none');
+            donutCanvas.classList.add('d-none');
+          } else {
+            donutCanvas.classList.remove('d-none');
+            areaCanvas.classList.add('d-none');
+          }
+        });
+      });
+    }
+
+    // DataTable
+    function initTable(){
+      const table = (window as any).DataTable ? (window as any).new DataTable('#orders', {
+        paging:true, searching:true, lengthChange:true
+      }) : null;
+      void table;
+    }
+
+    // ToDo logic
+    function initTodo(){
+      const list = $('#todo')!;
+      const input = $('#todoInput') as HTMLInputElement;
+      const addBtn = $('#addTodo') as HTMLButtonElement;
+
+      addBtn.addEventListener('click', ()=>{
+        const text = (input.value || '').trim();
+        if(!text) return;
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex align-items-center';
+        li.innerHTML = `
+          <i class="fa-solid fa-grip-vertical me-2 text-secondary"></i>
+          <input class="form-check-input me-2" type="checkbox">
+          ${text}
+          <button class="btn btn-sm btn-link text-danger ms-auto" data-delete><i class="fa-regular fa-trash-can"></i></button>
+        `;
+        list.appendChild(li);
+        input.value = '';
+      });
+
+      list.addEventListener('click', (e)=>{
+        const t = e.target as HTMLElement;
+        const btn = t.closest('[data-delete]') as HTMLElement | null;
+        if(btn){
+          (btn.closest('li') as HTMLElement)?.remove();
+        }
+      });
+
+      // Drag handles (basic)
+      let dragEl: HTMLElement | null = null;
+      list.querySelectorAll('li').forEach(li=>{
+        (li as HTMLElement).draggable = true;
+      });
+      list.addEventListener('dragstart', e=>{
+        dragEl = (e.target as HTMLElement);
+        (e.dataTransfer as DataTransfer).effectAllowed='move';
+      });
+      list.addEventListener('dragover', e=>{
+        e.preventDefault();
+        const over = (e.target as HTMLElement).closest('li') as HTMLElement | null;
+        if(over && dragEl && over!==dragEl){
+          const rect = over.getBoundingClientRect();
+          const after = (e as DragEvent).clientY > rect.top + rect.height/2;
+          list.insertBefore(dragEl, after ? over.nextSibling : over);
+        }
+      });
+    }
+
+    // Calendar stub
+    function buildCalendar(date: Date){
+      const title = $('#calTitle')!;
+      const tbody = $('#calendar tbody')!;
+      const month = date.getMonth();
+      const year = date.getFullYear();
+      const first = new Date(year, month, 1);
+      const startDay = first.getDay();
+      const daysInMonth = new Date(year, month+1, 0).getDate();
+
+      title.textContent = first.toLocaleString(undefined, { month:'long', year:'numeric' });
+
+      let html = '<tr>';
+      for(let i=0;i<startDay;i++) html += '<td class="text-secondary"></td>';
+      for(let d=1; d<=daysInMonth; d++){
+        const isWeekend = (startDay + d -1) % 7 === 0 || (startDay + d -1) % 7 === 6;
+        const badge = (d % 9 === 0) ? '<span class="badge text-bg-primary ms-1">Meeting</span>'
+                    : (d % 13 === 0) ? '<span class="badge text-bg-success ms-1">Release</span>'
+                    : (d % 5 === 0) ? '<span class="badge text-bg-warning ms-1">Reminder</span>' : '';
+        html += `<td class="${isWeekend?'bg-body-tertiary':''}"><div>${d}${badge}</div></td>`;
+        if((startDay + d) % 7 === 0) html += '</tr><tr>';
+      }
+      html += '</tr>';
+      tbody.innerHTML = html;
+    }
+
+    // Sidebar toggle (mobile)
+    function initSidebarToggle(){
+      const sidebar = $('#sidebar')!;
+      $('#btnSidebar')?.addEventListener('click', ()=>{
+        sidebar.classList.toggle('open');
+      });
+      // Close on content click in mobile
+      $('#content')?.addEventListener('click', ()=>{
+        if(window.innerWidth < 992) sidebar.classList.remove('open');
+      });
+    }
+
+    // Contacts toggle (chat)
+    function initChat(){
+      $('#toggleContacts')?.addEventListener('click', ()=>{
+        alert('Contacts pane toggled (stub).');
+      });
+    }
+
+    // Bootstrap tooltips (optional)
+    function initTooltips(){
+      $$('[title]').forEach(el=>{
+        new (window as any).bootstrap.Tooltip(el);
+      });
+    }
+
+    // Init
+    (function main(){
+      // restore theme/rtl
+      applyTheme((localStorage.getItem(THEME_KEY) as 'light'|'dark') || 'light');
+      applyRTL(localStorage.getItem(RTL_KEY) === '1');
+
+      // binds
+      $('#btnTheme')?.addEventListener('click', ()=>{
+        const next = document.body.classList.contains('theme-dark') ? 'light' : 'dark';
+        applyTheme(next);
+      });
+      $('#btnRTL')?.addEventListener('click', ()=>{
+        const enabled = document.documentElement.getAttribute('dir') === 'rtl';
+        applyRTL(!enabled);
+      });
+
+      initTreeview();
+      initCardTools();
+      initCharts();
+      initTable();
+      initTodo();
+      initSidebarToggle();
+      initChat();
+      initTooltips();
+
+      // Calendar
+      const now = new Date();
+      let view = new Date(now.getFullYear(), now.getMonth(), 1);
+      buildCalendar(view);
+      $('#prevMonth')?.addEventListener('click', ()=>{ view = new Date(view.getFullYear(), view.getMonth()-1, 1); buildCalendar(view); });
+      $('#nextMonth')?.addEventListener('click', ()=>{ view = new Date(view.getFullYear(), view.getMonth()+1, 1); buildCalendar(view); });
+    })();
+  </script>
+</body>
+</html>

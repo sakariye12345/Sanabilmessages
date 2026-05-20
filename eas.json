@@ -1,0 +1,42 @@
+{
+    "cli": {
+        "version": ">= 12.0.0"
+    },
+    "build": {
+        "development": {
+            "developmentClient": true,
+            "distribution": "internal"
+        },
+        "sanabil": {
+            "env": {
+                "APP_VARIANT": "sanabil"
+            },
+            "android": {
+                "buildType": "apk"
+            }
+        },
+        "alsunna": {
+            "env": {
+                "APP_VARIANT": "alsunna"
+            },
+            "android": {
+                "buildType": "apk"
+            }
+        },
+        "alxikma": {
+            "env": {
+                "APP_VARIANT": "alxikma"
+            },
+            "android": {
+                "buildType": "apk"
+            }
+        },
+        "preview": {
+            "distribution": "internal"
+        },
+        "production": {}
+    },
+    "submit": {
+        "production": {}
+    }
+}
