@@ -13,7 +13,7 @@ Sanabil Messages is no longer just a mobile UI prototype. The repo now contains 
 - Legacy and replacement bridge services for syncing CI3 messages into Supabase.
 
 The original business goal is consistent across the codebase:
-
+x
 - Stop depending on WhatsApp limits and third-party SMS gateway friction.
 - Deliver school messages directly to parent phones through your own app.
 - Keep CI3 as the upstream school system and Supabase as the middleware / control plane.

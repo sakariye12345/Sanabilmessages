@@ -3,6 +3,20 @@ import { View, Text, TextInput, Pressable, StyleSheet, Alert } from "react-nativ
 import { useRouter } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
 import { normalizeSomaliPhone, toE164SomaliPhone } from "../../src/utils/phone";
+import { SchoolConfig } from "../../src/config/schoolConfig";
+
+type RequestOtpResponse = {
+  success?: boolean;
+  status?: "queued" | "existing_active" | "paused";
+  queued?: boolean;
+  reused?: boolean;
+  provider?: string;
+  cooldown_seconds?: number;
+  message?: string;
+  paused?: boolean;
+  pause_until?: string | null;
+  error?: string;
+};
 
 export default function PhoneScreen() {
   const [phone, setPhone] = useState("");
@@ -24,15 +38,31 @@ export default function PhoneScreen() {
         throw new Error("Lambarka telefoonka sax ma aha.");
       }
 
-      const { data, error } = await supabase.functions.invoke("request-otp", {
-        body: { phone: normalizedPhone },
+      const { data, error } = await supabase.functions.invoke<RequestOtpResponse>("request-otp", {
+        body: {
+          phone: normalizedPhone,
+          school_id: SchoolConfig.SCHOOL_ID,
+        },
       });
 
       if (error) throw error;
+      if (!data?.success && data?.paused) {
+        throw new Error(data.message || "OTP service-ku si ku meel gaar ah ayuu u hakad galay.");
+      }
+      if (!data?.success && data?.error) {
+        throw new Error(data.error);
+      }
 
       console.log("OTP Requested:", data);
 
-      router.push({ pathname: "/(auth)/verify", params: { phone: e164Phone } });
+      router.push({
+        pathname: "/(auth)/verify",
+        params: {
+          phone: e164Phone,
+          cooldown: String(data?.cooldown_seconds ?? 30),
+          statusMessage: data?.message ?? "OTP waa la diyaariyay.",
+        },
+      });
     } catch (e: any) {
       console.log("[Auth Error]", e.message);
       Alert.alert(
@@ -47,7 +77,7 @@ export default function PhoneScreen() {
   return (
     <View style={s.container}>
       <Text style={s.title}>Sanabil Messages</Text>
-      <Text style={s.sub}>Geli lambarka telefoonka si OTP laguugu soo diro.</Text>
+      <Text style={s.sub}>Geli lambarka telefoonka si OTP WhatsApp laguugu soo diro.</Text>
 
       <TextInput
         value={phone}
@@ -58,7 +88,7 @@ export default function PhoneScreen() {
       />
 
       <Pressable onPress={verifyPhone} style={[s.btn, loading && { opacity: 0.6 }]} disabled={loading}>
-        <Text style={s.btnText}>{loading ? "Verifying..." : "Verify & Login"}</Text>
+        <Text style={s.btnText}>{loading ? "Fadlan sug..." : "Sii wad"}</Text>
       </Pressable>
     </View>
   );

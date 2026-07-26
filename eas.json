@@ -1,42 +1,87 @@
 {
-    "cli": {
-        "version": ">= 12.0.0"
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "sanabil"
+      }
     },
-    "build": {
-        "development": {
-            "developmentClient": true,
-            "distribution": "internal"
-        },
-        "sanabil": {
-            "env": {
-                "APP_VARIANT": "sanabil"
-            },
-            "android": {
-                "buildType": "apk"
-            }
-        },
-        "alsunna": {
-            "env": {
-                "APP_VARIANT": "alsunna"
-            },
-            "android": {
-                "buildType": "apk"
-            }
-        },
-        "alxikma": {
-            "env": {
-                "APP_VARIANT": "alxikma"
-            },
-            "android": {
-                "buildType": "apk"
-            }
-        },
-        "preview": {
-            "distribution": "internal"
-        },
-        "production": {}
+    "sanabil": {
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "sanabil"
+      },
+      "android": {
+        "buildType": "apk",
+        "autoIncrement": true
+      }
     },
-    "submit": {
-        "production": {}
+    "alsunna": {
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "alsunna"
+      },
+      "android": {
+        "buildType": "apk",
+        "autoIncrement": true
+      }
+    },
+    "alxikma": {
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "alxikma"
+      },
+      "android": {
+        "buildType": "apk",
+        "autoIncrement": true
+      }
+    },
+    "schoolb": {
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "schoolb"
+      },
+      "android": {
+        "buildType": "apk",
+        "autoIncrement": true
+      }
+    },
+    "schoolc": {
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "schoolc"
+      },
+      "android": {
+        "buildType": "apk",
+        "autoIncrement": true
+      }
+    },
+    "schoold": {
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "schoold"
+      },
+      "android": {
+        "buildType": "apk",
+        "autoIncrement": true
+      }
+    },
+    "production-sanabil": {
+      "env": {
+        "APP_VARIANT": "sanabil"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "autoIncrement": true
+      }
     }
+  },
+  "submit": {
+    "production-sanabil": {}
+  }
 }

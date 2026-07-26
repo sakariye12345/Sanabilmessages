@@ -40,4 +40,7 @@ export const Colors = {
     // Search Bar
     searchBarBackground: '#f0f4f9',
     searchBarText: '#444746',
+
+    // Error / destructive
+    error: '#d93025',
 };

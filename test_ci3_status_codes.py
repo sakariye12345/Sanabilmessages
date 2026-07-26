@@ -1,12 +1,15 @@
 import requests
 import json
+import os
 from rich.console import Console
 
 console = Console()
 
 # Configuration (Copied from bridge_service.py)
 CI3_BASE_URL = "https://schoolsfls443dr4rsm53m.shihaab.tech"
-CI3_TOKEN = "3e8ea952f2a06672"
+CI3_TOKEN = os.environ.get("CI3_API_TOKEN", "").strip()
+if not CI3_TOKEN:
+    raise RuntimeError("CI3_API_TOKEN environment variable is required")
 
 
 def get_ci3_headers():

@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { isAuthorizedInternalRequest } from '../_shared/internal.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -6,100 +7,112 @@ const EXPO_PUSH_API = 'https://exp.host/--/api/v2/push/send'
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-console.log("Notify Parents Function Loaded (Multi-School)")
-
 Deno.serve(async (req) => {
-    // This function is intended to be called by a Database Webhook
-    // The payload usually comes in as JSON: { type: 'INSERT', record: { ... }, ... }
+    if (!isAuthorizedInternalRequest(req, 'NOTIFY_WEBHOOK_SECRET')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+        })
+    }
 
     try {
         const payload = await req.json()
-        console.log("Webhook Payload:", JSON.stringify(payload))
+        const record = payload.record
 
-        const record = payload.record // The inserted row in 'message_recipients'
-
-        if (!record || !record.phone_number) {
-            return new Response("No record data", { status: 400 })
+        if (!record?.id || !record?.phone_number || !record?.message_id || !record?.school_id) {
+            return new Response(JSON.stringify({ error: 'Invalid webhook record' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+            })
         }
 
-        const { id, phone_number, message_id } = record
-
-        // 1. Fetch Message Details (Title/Body) + Include School Name
-        const { data: messageData } = await supabase
+        const { data: messageData, error: messageError } = await supabase
             .from('messages')
-            .select(`
-            *,
-            schools ( name )
-        `)
-            .eq('id', message_id)
+            .select('id, school_id, title, body, type, schools(name)')
+            .eq('id', record.message_id)
+            .eq('school_id', record.school_id)
             .single()
 
-        if (!messageData) {
-            console.error("Message body not found for ID:", message_id)
-            return new Response("Message body missing", { status: 404 })
+        if (messageError || !messageData) {
+            return new Response(JSON.stringify({ error: 'Message not found in recipient school' }), {
+                status: 404,
+                headers: { 'Content-Type': 'application/json' },
+            })
         }
 
-        const schoolName = messageData.schools?.name || 'School Notice'
-
-        // 2. Fetch User Tokens
-        const { data: devices } = await supabase
+        const { data: devices, error: deviceError } = await supabase
             .from('user_devices')
             .select('fcm_token')
-            .eq('phone_number', phone_number)
+            .eq('school_id', record.school_id)
+            .eq('phone_number', record.phone_number)
             .eq('is_active', true)
+            .is('revoked_at', null)
+            .not('fcm_token', 'is', null)
 
-        if (!devices || devices.length === 0) {
-            console.log(`No active devices for ${phone_number}`)
-            await updateStatus(id, 'failed', 'No active devices')
-            return new Response("No devices found", { status: 200 })
+        if (deviceError) throw deviceError
+
+        const tokens = (devices || [])
+            .map((device: any) => device.fcm_token)
+            .filter((token: string) => /^(ExponentPushToken|ExpoPushToken)\[.+\]$/.test(token))
+
+        if (tokens.length === 0) {
+            return new Response(JSON.stringify({ sent: 0, reason: 'no_active_push_tokens' }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+            })
         }
 
-        // 3. Prepare Push Payload
-        const pushPayload = devices.map((d: any) => ({
-            to: d.fcm_token,
-            title: messageData.title,
-            body: `${schoolName}: ${messageData.body}`, // Prepend School Name for context
+        const schoolRelation = Array.isArray(messageData.schools)
+            ? messageData.schools[0]
+            : messageData.schools
+        const schoolName = schoolRelation?.name || 'School Notice'
+        const shortBody = messageData.body.length > 150
+            ? `${messageData.body.slice(0, 147)}...`
+            : messageData.body
+
+        const pushPayload = tokens.map((token: string) => ({
+            to: token,
+            title: `${schoolName}: ${messageData.title}`,
+            body: shortBody,
             data: {
                 message_id: messageData.id,
+                school_id: messageData.school_id,
                 type: messageData.type,
-                school_name: schoolName
             },
-            sound: 'default'
+            sound: 'default',
         }))
 
-        // 4. Send to Expo
-        const resp = await fetch(EXPO_PUSH_API, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Accept-encoding': 'gzip, deflate',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(pushPayload),
-        })
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 15_000)
 
-        if (resp.ok) {
-            // We assume success for now (Expo returns tickets, sophisticated logic checks ticket status)
-            await updateStatus(id, 'sent')
-            return new Response("Notification sent", { status: 200 })
-        } else {
-            const errText = await resp.text()
-            await updateStatus(id, 'failed', `Expo Error: ${resp.status}`)
-            return new Response(`Expo API Error: ${errText}`, { status: 500 })
+        try {
+            const response = await fetch(EXPO_PUSH_API, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Accept-encoding': 'gzip, deflate',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(pushPayload),
+                signal: controller.signal,
+            })
+
+            if (!response.ok) {
+                throw new Error(`Expo Push API returned ${response.status}`)
+            }
+        } finally {
+            clearTimeout(timeout)
         }
 
-    } catch (error) {
-        console.error("Function Error:", error)
-        return new Response(error.message, { status: 500 })
+        return new Response(JSON.stringify({ sent: pushPayload.length }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+        })
+    } catch (error: any) {
+        console.error('[notify-parents]', error.message)
+        return new Response(JSON.stringify({ error: 'Notification delivery failed' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        })
     }
 })
-
-async function updateStatus(id: number, status: string, errorMsg?: string) {
-    const updatePayload: any = { status, sent_at: new Date().toISOString() }
-    if (errorMsg) updatePayload.error = errorMsg
-
-    await supabase
-        .from('message_recipients')
-        .update(updatePayload)
-        .eq('id', id)
-}

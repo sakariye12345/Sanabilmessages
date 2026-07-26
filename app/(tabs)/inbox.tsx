@@ -10,6 +10,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { SchoolConfig } from "../../src/config/schoolConfig";
 import { normalizeSomaliPhone } from "../../src/utils/phone";
 
+type ParentProfile = {
+  parent_name: string | null;
+};
+
 export default function InboxScreen() {
   const user = useAuthStore((s) => s.user);
   const router = useRouter();
@@ -22,15 +26,17 @@ export default function InboxScreen() {
   );
 
   const { data: messages, isLoading, refetch } = useQuery({
-    queryKey: ["inbox_broadcasts", user?.phone],
-    queryFn: async () => {
+    queryKey: ["inbox_broadcasts", SchoolConfig.SCHOOL_ID, user?.phone],
+    queryFn: async (): Promise<any[]> => {
       try {
         if (!user?.phone) {
           console.log("Inbox: No user phone found");
           return [];
         }
 
-        const { data: rawData, error: rawError } = await supabase.rpc("get_my_inbox");
+        const { data: rawData, error: rawError } = await supabase.rpc("get_my_inbox", {
+          p_school_id: SchoolConfig.SCHOOL_ID,
+        });
 
         if (rawError) {
           console.log("Inbox raw RPC Error:", rawError);
@@ -42,16 +48,20 @@ export default function InboxScreen() {
           if (pendingIds.length > 0) {
             console.log("Marking as SENT (Delivered to App):", pendingIds);
             supabase
-              .from("message_recipients")
-              .update({ status: "sent" })
-              .in("id", pendingIds)
+              .rpc("mark_my_recipients", {
+                p_school_id: SchoolConfig.SCHOOL_ID,
+                p_recipient_ids: pendingIds,
+                p_status: "sent",
+              })
               .then(({ error }) => {
                 if (error) console.error("Failed to mark sent:", error);
               });
           }
         }
 
-        const { data: summaryData, error: summaryError } = await supabase.rpc("get_inbox_summary");
+        const { data: summaryData, error: summaryError } = await supabase.rpc("get_inbox_summary", {
+          p_school_id: SchoolConfig.SCHOOL_ID,
+        });
 
         if (summaryError) {
           console.log("Summary RPC Error:", summaryError);
@@ -81,7 +91,7 @@ export default function InboxScreen() {
     const normalizedPhone = normalizeSomaliPhone(user.phone);
     if (!normalizedPhone) return;
 
-    const channelId = `inbox-${normalizedPhone}-${Date.now()}`;
+    const channelId = `inbox-${SchoolConfig.SCHOOL_ID}-${normalizedPhone}-${Date.now()}`;
 
     const channel = supabase
       .channel(channelId)
@@ -91,7 +101,7 @@ export default function InboxScreen() {
           event: "INSERT",
           schema: "public",
           table: "message_recipients",
-          filter: `phone_number=eq.${normalizedPhone}`,
+          filter: `school_id=eq.${SchoolConfig.SCHOOL_ID}`,
         },
         () => {
           refetch();
@@ -124,12 +134,14 @@ export default function InboxScreen() {
   };
 
   const { data: parentProfile } = useQuery({
-    queryKey: ["parent_profile", user?.phone],
-    queryFn: async () => {
+    queryKey: ["parent_profile", SchoolConfig.SCHOOL_ID, user?.phone],
+    queryFn: async (): Promise<ParentProfile | null> => {
       if (!user?.phone) return null;
-      const { data, error } = await supabase.rpc("get_my_profile").maybeSingle();
+      const { data, error } = await supabase.rpc("get_my_profile", {
+        p_school_id: SchoolConfig.SCHOOL_ID,
+      }).maybeSingle();
       if (error) throw error;
-      return data;
+      return data as ParentProfile | null;
     },
     enabled: !!user?.phone,
   });
@@ -192,13 +204,7 @@ export default function InboxScreen() {
         renderItem={({ item }) => (
           <ConversationRow
             conversation={item}
-            onPress={() => {
-              if (item.is_broadcast) {
-                router.push(`/thread/${item.row_type}`);
-              } else {
-                router.push(`/chat/${item.phone}`);
-              }
-            }}
+            onPress={() => router.push(`/thread/${item.row_type}`)}
           />
         )}
         contentContainerStyle={{ paddingBottom: 100, paddingTop: 8 }}
@@ -208,11 +214,6 @@ export default function InboxScreen() {
           </View>
         }
       />
-
-      <Pressable style={s.fab} onPress={() => router.push("/new-chat")}>
-        <Ionicons name="chatbubble-ellipses-outline" size={24} color={Colors.fabContent} style={{ marginRight: 8 }} />
-        <Text style={s.fabText}>Start Chat</Text>
-      </Pressable>
     </View>
   );
 }
@@ -266,27 +267,5 @@ const s = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  fab: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    backgroundColor: Colors.fabBackground,
-    borderRadius: 16,
-    flexDirection: "row",
-    height: 56,
-    paddingHorizontal: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  fabText: {
-    color: Colors.fabContent,
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });

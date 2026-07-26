@@ -1,106 +1,91 @@
-// app.config.js
-// ============================================================
-// MULTI-SCHOOL BUILD CONFIGURATION
-// Usage:
-//   APP_VARIANT=sanabil   eas build --platform android
-//   APP_VARIANT=alsunna   eas build --platform android
-//   APP_VARIANT=alxikma   eas build --platform android
-// ============================================================
+const fs = require("fs");
+const path = require("path");
 
-const APP_VARIANT = process.env.APP_VARIANT ?? 'sanabil';
+const APP_VARIANT = process.env.APP_VARIANT ?? "sanabil";
+const manifestPath = path.join(__dirname, "config", "schools.manifest.json");
+const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 
-const schools = {
-    sanabil: {
-        name: 'Sanabil Messages',
-        slug: 'SanabilMessages',
-        scheme: 'sanabilmessages',
-        package: 'com.sanabil.messages',
-        icon: './assets/icon.png',
-        adaptiveIcon: './assets/adaptive-icon.png',
-        splashIcon: './assets/splash-icon.png',
-        primaryColor: '#4CAF50',
-        schoolId: 1,
-        supportPhone: '+25261xxxxxx',
-        website: 'https://sanabil.so',
-    },
-    alsunna: {
-        name: 'Alsunna Messages',
-        slug: 'AlsunnaMessages',
-        scheme: 'alsunnamessages',
-        package: 'com.alsunna.messages',
-        icon: './assets/alsunna-icon.png',
-        adaptiveIcon: './assets/alsunna-adaptive-icon.png',
-        splashIcon: './assets/alsunna-splash-icon.png',
-        primaryColor: '#1565C0',
-        schoolId: 2,
-        supportPhone: '+25262xxxxxx',
-        website: 'https://alsunna.so',
-    },
-    alxikma: {
-        name: 'Al-Xikma Messages',
-        slug: 'AlxikmaMessages',
-        scheme: 'alxikmamessages',
-        package: 'com.alxikma.messages',
-        icon: './assets/alxikma-icon.png',
-        adaptiveIcon: './assets/alxikma-adaptive-icon.png',
-        splashIcon: './assets/alxikma-splash-icon.png',
-        primaryColor: '#6A1B9A',
-        schoolId: 3,
-        supportPhone: '+25263xxxxxx',
-        website: 'https://alxikma.so',
-    },
+const defaultAssets = {
+  icon: "./assets/icon.png",
+  adaptiveIcon: "./assets/adaptive-icon.png",
+  splashIcon: "./assets/splash-icon.png",
+  favicon: "./assets/favicon.png",
 };
 
-const config = schools[APP_VARIANT] ?? schools.sanabil;
+function toExpoAsset(relativeAssetPath, fallbackAssetPath) {
+  const candidate = relativeAssetPath || fallbackAssetPath;
+  const normalized = candidate.startsWith("./") ? candidate.slice(2) : candidate;
+  const absolute = path.join(__dirname, normalized);
+  return fs.existsSync(absolute) ? candidate : fallbackAssetPath;
+}
 
-export default {
-    expo: {
-        name: config.name,
-        slug: config.slug,
-        scheme: config.scheme,
-        version: '1.0.0',
-        orientation: 'portrait',
-        icon: config.icon,
-        userInterfaceStyle: 'light',
-        newArchEnabled: true,
-        splash: {
-            image: config.splashIcon,
-            resizeMode: 'contain',
-            backgroundColor: '#ffffff',
-        },
-        ios: {
-            supportsTablet: true,
-            bundleIdentifier: config.package,
-        },
-        android: {
-            package: config.package,
-            adaptiveIcon: {
-                foregroundImage: config.adaptiveIcon,
-                backgroundColor: '#ffffff',
-            },
-            edgeToEdgeEnabled: true,
-            predictiveBackGestureEnabled: false,
-        },
-        web: {
-            favicon: './assets/favicon.png',
-        },
-        plugins: [
-            'expo-router',
-            'expo-secure-store',
-        ],
-        extra: {
-            // Available at runtime via expo-constants:
-            // import Constants from 'expo-constants';
-            // const schoolId = Constants.expoConfig?.extra?.schoolId;
-            schoolId: config.schoolId,
-            primaryColor: config.primaryColor,
-            supportPhone: config.supportPhone,
-            website: config.website,
-            appVariant: APP_VARIANT,
-            router: {},
-            eas: {
-                projectId: '6cc824df-679c-4e92-8a30-39e84af42abe',
-            },
-        },
+const configuredSchool = manifest.schools?.[APP_VARIANT];
+const config = configuredSchool;
+
+if (!config) {
+  throw new Error(
+    `Unknown APP_VARIANT '${APP_VARIANT}'. Add it to config/schools.manifest.json before building.`
+  );
+}
+
+const icon = toExpoAsset(config.assets?.icon, defaultAssets.icon);
+const adaptiveIcon = toExpoAsset(config.assets?.adaptiveIcon, defaultAssets.adaptiveIcon);
+const splashIcon = toExpoAsset(config.assets?.splashIcon, defaultAssets.splashIcon);
+const favicon = toExpoAsset(config.assets?.favicon, defaultAssets.favicon);
+
+module.exports = {
+  expo: {
+    owner: "alsunna123",
+    name: config.name,
+    slug: "sanabil-messages-platform",
+    scheme: config.scheme,
+    version: "1.0.0",
+    orientation: "portrait",
+    icon,
+    userInterfaceStyle: "light",
+    newArchEnabled: true,
+    splash: {
+      image: splashIcon,
+      resizeMode: "contain",
+      backgroundColor: "#ffffff",
     },
+    ios: {
+      supportsTablet: true,
+      bundleIdentifier: config.package,
+    },
+    android: {
+      package: config.package,
+      adaptiveIcon: {
+        foregroundImage: adaptiveIcon,
+        backgroundColor: "#ffffff",
+      },
+      edgeToEdgeEnabled: true,
+      predictiveBackGestureEnabled: false,
+    },
+    web: {
+      favicon,
+    },
+    plugins: [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "default"
+        }
+      ]
+    ],
+    extra: {
+      schoolId: config.schoolId,
+      primaryColor: config.primaryColor,
+      supportPhone: config.supportPhone,
+      website: config.website,
+      appVariant: APP_VARIANT,
+      router: {},
+      eas: {
+        projectId: "fdcc05a4-f719-474b-a1e4-889a90ca628d",
+      },
+    },
+  },
 };

@@ -4,6 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { normalizeSomaliPhone } from '../_shared/phone.ts'
+import { isAuthorizedInternalRequest } from '../_shared/internal.ts'
 
 // Environment variables for Supabase (Service Role is required for RLS bypass)
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -15,8 +16,6 @@ const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
-
-console.log("Hello from Multi-School Bridge Sync (Production v2)!")
 
 interface School {
     id: number
@@ -52,6 +51,13 @@ Deno.serve(async (req) => {
         return new Response('ok', { headers: corsHeaders })
     }
 
+    if (!isAuthorizedInternalRequest(req)) {
+        return new Response(
+            JSON.stringify({ error: 'Unauthorized' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+    }
+
     try {
         const results = {
             schools_processed: 0,
@@ -73,6 +79,8 @@ Deno.serve(async (req) => {
         // 2. Process Each School
         for (const school of schools) {
             try {
+                const schoolErrorCountBefore = results.errors.length
+
                 // Downstream (CI3 -> Supabase)
                 const downCount = await processDownstream(school, results)
 
@@ -81,8 +89,16 @@ Deno.serve(async (req) => {
 
                 results.schools_processed++
 
-                // Log Success
-                await logSync(school.id, 'SUCCESS', `Processed ${downCount} down, ${upCount} up.`)
+                const schoolErrorCount = results.errors.length - schoolErrorCountBefore
+                if (schoolErrorCount > 0) {
+                    await logSync(
+                        school.id,
+                        'PARTIAL',
+                        `Processed ${downCount} down, ${upCount} up with ${schoolErrorCount} item error(s).`,
+                    )
+                } else if (downCount > 0 || upCount > 0) {
+                    await logSync(school.id, 'SUCCESS', `Processed ${downCount} down, ${upCount} up.`)
+                }
 
             } catch (e: any) {
                 const msg = `Error in school ${school.name}: ${e.message}`
@@ -109,8 +125,11 @@ Deno.serve(async (req) => {
 // Retry Function (Exponential Backoff)
 async function fetchWithRetry(url: string, options: any, retries = 3, backoff = 1000) {
     for (let i = 0; i < retries; i++) {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 20_000)
+
         try {
-            const res = await fetch(url, options)
+            const res = await fetch(url, { ...options, signal: controller.signal })
             if (!res.ok) {
                 // If 5xx error, throw to retry. If 4xx (client error), maybe don't retry?
                 // For now, retry all non-200 to be safe against flakes.
@@ -122,6 +141,8 @@ async function fetchWithRetry(url: string, options: any, retries = 3, backoff = 
             if (i === retries - 1) throw e // Final failure
             console.log(`Retrying ${url} (${i + 1}/${retries})...`)
             await new Promise(r => setTimeout(r, backoff * (i + 1))) // Wait 1s, 2s, 3s
+        } finally {
+            clearTimeout(timeout)
         }
     }
     throw new Error(`Failed after ${retries} retries`)
@@ -159,6 +180,9 @@ async function processDownstream(school: School, results: any): Promise<number> 
 
         if (ci3Resp.ok) {
             const ci3Msgs = await ci3Resp.json()
+            if (!Array.isArray(ci3Msgs)) {
+                throw new Error('CI3 messages response must be an array')
+            }
             const pending = ci3Msgs.filter((m: any) => !['sent', 'failed'].includes(m.sent_status))
 
             for (const msg of pending) {
@@ -180,9 +204,9 @@ async function processUpstream(school: School, results: any): Promise<number> {
     // Only fetch Status Updates for THIS school's messages
     const { data: updates, error } = await supabase
         .from('message_recipients')
-        .select('id, status, ci3_id, messages!inner(school_id)') // Join to filter by school
+        .select('id, status, ci3_id')
         .eq('is_synced_to_ci3', false)
-        .eq('messages.school_id', school.id)
+        .eq('school_id', school.id)
         .not('ci3_id', 'is', null)
 
     if (error) throw new Error(`Supabase Fetch Error: ${error.message}`)
@@ -198,8 +222,15 @@ async function processUpstream(school: School, results: any): Promise<number> {
 
 // HELPER: Process a single CI3 message
 async function processSingleMessage(msg: any, school: School, results: any): Promise<boolean> {
-    // 1. Determine Type/Title FIRST (Used for Composite ID)
-    const text = (msg.message || '').replace('<br />', '\n')
+    const rawCi3Id = String(msg.id ?? '').trim()
+    const cleanPhone = normalizeSomaliPhone(msg.phone || '')
+    const text = String(msg.message || '').replace(/<br\s*\/?>/gi, '\n').trim()
+
+    if (!rawCi3Id || !cleanPhone || !text) {
+        results.errors.push(`Invalid CI3 message payload (${school.name}, id: ${rawCi3Id || 'missing'})`)
+        return false
+    }
+
     const lowerText = text.toLowerCase()
     let type = 'general'
     let title = 'School Notice'
@@ -210,48 +241,34 @@ async function processSingleMessage(msg: any, school: School, results: any): Pro
     else if (['mahad', 'received', 'bixisay'].some(k => lowerText.includes(k))) { type = 'receipt'; title = 'Fee Receipt' }
     else if (['ogaysiis', 'notice', 'fasax', 'holiday'].some(k => lowerText.includes(k))) { type = 'notice'; title = 'School Notice' }
 
-    // 2. Generate Composite ID to avoid collisions (e.g., "501-finance")
-    const rawCi3Id = String(msg.id)
     const compositeCi3Id = `${rawCi3Id}-${type}`
 
-    // 3. Check Duplicates (Idempotency) - scoped to this school
-    await logSync(school.id, 'PARTIAL', `Checking dupes for ${compositeCi3Id} (Legacy: ${rawCi3Id})...`)
-
-    // First, check exact composite match
-    const { data: exactMatch } = await supabase
+    const { data: exactMatch, error: exactMatchError } = await supabase
         .from('message_recipients')
-        .select('id, messages!inner(school_id)')
+        .select('id')
+        .eq('school_id', school.id)
         .eq('ci3_id', compositeCi3Id)
-        .eq('messages.school_id', school.id)
         .maybeSingle()
 
-    if (exactMatch) {
-        await logSync(school.id, 'PARTIAL', `SKIP: Exact match found for ${compositeCi3Id}`)
-        return false
-    }
+    if (exactMatchError) throw exactMatchError
+    if (exactMatch) return false
 
-    // Second, check legacy match
-    const { data: legacyMatch } = await supabase
+    const { data: legacyMatch, error: legacyMatchError } = await supabase
         .from('message_recipients')
         .select('id, messages!inner(type)')
+        .eq('school_id', school.id)
         .eq('ci3_id', rawCi3Id)
-        .eq('messages.school_id', school.id)
         .maybeSingle()
 
+    if (legacyMatchError) throw legacyMatchError
     if (legacyMatch) {
-        // @ts-ignore
-        const legacyType = legacyMatch.messages?.type
-        await logSync(school.id, 'PARTIAL', `Legacy match ${rawCi3Id}. Legacy: ${legacyType}, New: ${type}`)
-
-        if (legacyType === type) {
-            await logSync(school.id, 'PARTIAL', `SKIP: Legacy type matches new type.`)
-            return false
-        }
-        // If types differ, ALLOW IT.
-        await logSync(school.id, 'PARTIAL', `ALLOW: Types differ.`)
+        const legacyMessage = Array.isArray(legacyMatch.messages)
+            ? legacyMatch.messages[0]
+            : legacyMatch.messages
+        const legacyType = legacyMessage?.type
+        if (legacyType === type) return false
     }
 
-    // 4. Insert Message Body (Linked to School)
     const { data: newMsg, error: msgError } = await supabase
         .from('messages')
         .insert({
@@ -282,32 +299,19 @@ async function processSingleMessage(msg: any, school: School, results: any): Pro
 
             if (!existingMsgError && existingMsg) {
                 targetMessage = existingMsg
-                await logSync(school.id, 'PARTIAL', `Reusing existing message for CI3 ${rawCi3Id}`, {
-                    message_id: existingMsg.id,
-                })
             }
         }
     }
 
     if (!targetMessage) {
-        await logSync(school.id, 'PARTIAL', `Message insert failed for CI3 ${rawCi3Id}`, {
-            error: msgError?.message || 'unknown',
-            phone: msg.phone || null,
-        })
         results.errors.push(`Msg Insert Error (${school.name}): ${msgError?.message}`)
-        return false
-    }
-
-    // 5. Insert Recipient
-    const cleanPhone = normalizeSomaliPhone(msg.phone || '')
-    if (!cleanPhone) {
-        results.errors.push(`Recipient phone missing or invalid for CI3 message ${rawCi3Id}`)
         return false
     }
 
     const { error: rcptError } = await supabase
         .from('message_recipients')
         .insert({
+            school_id: school.id,
             message_id: targetMessage.id,
             phone_number: cleanPhone,
             status: 'pending',
@@ -317,25 +321,26 @@ async function processSingleMessage(msg: any, school: School, results: any): Pro
 
     if (!rcptError) {
         results.downstream++
-
-        // 🔥 Fire and Forget Push Notification
-        // Don't await heavily, let it run asynchronously (or await lightly) so it doesn't block the sync loop
-        await sendPushNotification(cleanPhone, title, text, school.name)
+        await sendPushNotification(
+            school.id,
+            targetMessage.id,
+            cleanPhone,
+            title,
+            text,
+            school.name,
+        )
 
         return true
     } else {
-        await logSync(school.id, 'PARTIAL', `Recipient insert failed for CI3 ${rawCi3Id}`, {
-            error: rcptError.message,
-            phone: cleanPhone,
-            message_id: targetMessage.id,
-        })
         if (newMsg?.id) {
             await supabase
                 .from('messages')
                 .delete()
                 .eq('id', newMsg.id)
         }
-        console.error(`Recipient Insert Error (${school.name})`, rcptError)
+        if (rcptError.code !== '23505') {
+            results.errors.push(`Recipient Insert Error (${school.name}): ${rcptError.message}`)
+        }
         return false
     }
 }
@@ -383,21 +388,33 @@ async function updateCi3Status(item: any, school: School, results: any): Promise
 }
 
 // HELPER: Send Expo Push Notification
-async function sendPushNotification(phone: string, title: string, body: string, schoolName: string) {
+async function sendPushNotification(
+    schoolId: number,
+    messageId: number,
+    phone: string,
+    title: string,
+    body: string,
+    schoolName: string,
+) {
     try {
         // 1. Fetch active push tokens for this phone number
         const { data: devices } = await supabase
             .from('user_devices')
             .select('fcm_token')
+            .eq('school_id', schoolId)
             .eq('phone_number', phone)
             .eq('is_active', true)
+            .is('revoked_at', null)
 
         if (!devices || devices.length === 0) return;
 
         // 2. Prepare Expo Push API payload
         const messages = [];
         for (const device of devices) {
-            if (!device.fcm_token) continue;
+            if (
+                !device.fcm_token ||
+                !/^(ExponentPushToken|ExpoPushToken)\[.+\]$/.test(device.fcm_token)
+            ) continue;
             // Truncate body if very long
             const shortBody = body.length > 150 ? body.substring(0, 147) + '...' : body;
 
@@ -406,22 +423,35 @@ async function sendPushNotification(phone: string, title: string, body: string, 
                 sound: 'default',
                 title: `${schoolName}: ${title}`,
                 body: shortBody,
-                data: { phone, type: 'new_message' },
+                data: {
+                    message_id: messageId,
+                    school_id: schoolId,
+                    type: 'new_message',
+                },
             });
         }
 
         if (messages.length === 0) return;
 
         // 3. Send out via Expo HTTP HTTP/2 API
-        const response = await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                'Accept-encoding': 'gzip, deflate',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(messages),
-        });
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 15_000)
+        let response: Response
+
+        try {
+            response = await fetch('https://exp.host/--/api/v2/push/send', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Accept-encoding': 'gzip, deflate',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(messages),
+                signal: controller.signal,
+            });
+        } finally {
+            clearTimeout(timeout)
+        }
 
         if (!response.ok) {
             console.error(`Expo Push API failed with status ${response.status}`);

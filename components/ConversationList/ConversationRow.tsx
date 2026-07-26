@@ -1,18 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Conversation } from '../../types';
 import { Colors } from '../../constants/Colors';
 import { Avatar } from '../ui/Avatar';
 
 interface ConversationRowProps {
     conversation: Conversation;
-    onPress?: () => void;
+    onPress: () => void;
 }
 
 export const ConversationRow: React.FC<ConversationRowProps> = ({ conversation, onPress }) => {
-    const router = useRouter();
-
     // Helper to format date
     const formatDate = (isoString: string) => {
         const date = new Date(isoString);
@@ -32,7 +29,7 @@ export const ConversationRow: React.FC<ConversationRowProps> = ({ conversation, 
     return (
         <Pressable
             style={s.container}
-            onPress={onPress || (() => router.push(`/chat/${conversation.phone_number}`))}
+            onPress={onPress}
             android_ripple={{ color: Colors.surface }}
         >
             <Avatar name={conversation.display_name || conversation.phone_number} />

@@ -1,8 +1,11 @@
 import requests
 from rich.console import Console
 import json
+import os
 
-API_TOKEN = "3e8ea952f2a06672"
+API_TOKEN = os.environ.get("CI3_API_TOKEN", "").strip()
+if not API_TOKEN:
+    raise RuntimeError("CI3_API_TOKEN environment variable is required")
 ENDPOINT_FETCH = "https://schoolsfls443dr4rsm53m.shihaab.tech/messages/contacts"
 
 console = Console()

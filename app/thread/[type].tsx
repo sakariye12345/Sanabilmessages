@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, Alert, 
 import { useLocalSearchParams, Stack, useRouter, useFocusEffect } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
 import dayjs from "dayjs";
-import { SchoolConfig } from "../../src/config/schoolConfig";
 import { useAuthStore } from "../../src/store/auth";
 import { Colors } from "../../constants/Colors";
 import { PinchGestureHandler, State } from 'react-native-gesture-handler';
 import * as Clipboard from 'expo-clipboard';
+import { SchoolConfig } from '../../src/config/schoolConfig';
+import { normalizeSomaliPhone } from '../../src/utils/phone';
 
 const titleMap: Record<string, string> = {
     absence: 'Fariimaha Maqnaanshaha',
@@ -55,9 +56,10 @@ export default function ThreadScreen() {
     // 🟢 REALTIME SUBSCRIPTION
     useEffect(() => {
         if (!user?.phone) return;
-        const phone = user.phone.replace('+', ''); // DB and Auth are both standardized to '252...'
+        const phone = normalizeSomaliPhone(user.phone);
+        if (!phone) return;
 
-        const channelId = `thread-${type}-${phone}-${Date.now()}`;
+        const channelId = `thread-${SchoolConfig.SCHOOL_ID}-${type}-${phone}-${Date.now()}`;
         console.log("Subscribing to thread channel:", channelId);
 
         const channel = supabase
@@ -68,7 +70,7 @@ export default function ThreadScreen() {
                     event: 'INSERT',
                     schema: 'public',
                     table: 'message_recipients',
-                    filter: `phone_number=eq.${phone}`
+                    filter: `school_id=eq.${SchoolConfig.SCHOOL_ID}`
                 },
                 (payload) => {
                     console.log('🔔 New Message in Thread!', payload);
@@ -94,10 +96,14 @@ export default function ThreadScreen() {
             // but usually auth store has it correct.
             // Ensure phone matches Auth format (252...)
             // Since we standardized DB to match Auth, we use user.phone directly.
-            const phone = user.phone.replace('+', '');
+            const phone = normalizeSomaliPhone(user.phone);
+            if (!phone) return;
 
             // 🔒 SECURE FETCH: Use RPC instead of .from()
-            const { data, error } = await supabase.rpc('get_thread_messages', { p_type: type });
+            const { data, error } = await supabase.rpc('get_thread_messages', {
+                p_school_id: SchoolConfig.SCHOOL_ID,
+                p_type: type,
+            });
 
             if (error) throw error;
 
@@ -116,8 +122,10 @@ export default function ThreadScreen() {
                 }
             }));
 
-            // Apply White-Label Filtering (Multi-tenant isolation)
-            const filtered = formattedData.filter((r: any) => String(r.messages.school_id) === String(SchoolConfig.SCHOOL_ID));
+            // Backend RPC already scopes results to the authenticated parent.
+            // Keep the client display neutral so pilot variants don't hide valid rows
+            // when build-time school config and backend school mapping differ.
+            const filtered = formattedData;
 
             // DEDUPLICATION LOGIC (UX Fix for CI3 Duplicates)
             // We keep 'filtered' intact for marking-as-read (so we clear duplicate badges),
@@ -140,10 +148,11 @@ export default function ThreadScreen() {
             console.log(`[Thread Debug] Found ${filtered.length} raw msgs. Displaying ${uniqueMessages.length}. Unread IDs:`, unreadIds);
 
             if (unreadIds.length > 0) {
-                const { error: markError } = await supabase
-                    .from('message_recipients')
-                    .update({ status: 'seen' })
-                    .in('id', unreadIds);
+                const { error: markError } = await supabase.rpc('mark_my_recipients', {
+                    p_school_id: SchoolConfig.SCHOOL_ID,
+                    p_recipient_ids: unreadIds,
+                    p_status: 'seen',
+                });
 
                 if (markError) {
                     console.error("[Thread Debug] Mark Read Error:", markError);

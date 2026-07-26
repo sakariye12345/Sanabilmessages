@@ -1,8 +1,11 @@
 import requests
 import json
+import os
 
 CI3_URL = "https://schoolsfls443dr4rsm53m.shihaab.tech"
-TOKEN = "3e8ea952f2a06672"
+TOKEN = os.environ.get("CI3_API_TOKEN", "").strip()
+if not TOKEN:
+    raise RuntimeError("CI3_API_TOKEN environment variable is required")
 
 def check_api():
     print(f"--- Fecthing from {CI3_URL} ---")

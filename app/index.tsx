@@ -1,14 +1,10 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { ActivityIndicator, View } from "react-native";
 import { Redirect } from "expo-router";
 import { useAuthStore } from "../src/store/auth";
 
 export default function Index() {
-  const { session, hydrated, hydrate } = useAuthStore();
-
-  useEffect(() => {
-    hydrate();
-  }, [hydrate]);
+  const { session, hydrated } = useAuthStore();
 
   if (!hydrated) {
     return (

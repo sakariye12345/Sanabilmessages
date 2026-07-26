@@ -1,0 +1,204 @@
+# Live Rollout Checklist
+
+Generated: 2026-07-26T06:11:47.411Z
+
+## Global Preflight
+
+Run these first:
+
+```powershell
+npm ci
+npm ci --prefix whatsapp-service --omit=optional
+npm run preflight:production
+npm run schools:seed:generate
+npm run schools:runbook:generate
+```
+
+Do not continue unless `npm run preflight:production` passes. It rejects
+placeholder school data, disconnected WhatsApp sessions, unready devices,
+misaligned migrations, inactive Edge Functions, and Supabase REST failures such
+as `402 exceed_db_size_quota`.
+
+## Supabase Load
+
+Review:
+
+- [generated/pilot_seed.generated.sql](/C:/Users/hp/SanabilMessages/generated/pilot_seed.generated.sql)
+
+Then open the linked project's **Supabase SQL Editor**, paste the reviewed SQL,
+and run it there. The current Supabase CLI does not provide a
+`supabase db query --linked` command.
+
+Before executing the seed:
+
+1. Replace every `.example` URL and placeholder phone with real pilot data.
+2. Confirm every `school_id` matches the corresponding app variant.
+3. Keep CI3/API credentials in Supabase Vault or Edge Function secrets, not in
+   the generated SQL or Git.
+
+## School-by-School Execution
+
+## SANABIL / sanabil
+
+- School ID: `1`
+- App Name: `Sanabil Messages`
+- Package: `com.sanabil.messages`
+- Parents Source: `https://demo.saafisystems.com`
+- Messages Source: `https://schoolsfls443dr4rsm53m.shihaab.tech`
+- OTP Node: `VPS-1`
+- OTP Status Target: `CONNECTED`
+- Test Parents:
+  - `252630000111`
+  - `252630000112`
+  - `252630000113`
+- Device: `Device-1`
+
+### Build Command
+```powershell
+npx eas-cli build --platform android --profile sanabil
+```
+
+### OTP Session Activation
+1. Open OTP dashboard for your VPS node
+2. Start session for school ID `1`
+3. Scan QR if status is not CONNECTED
+4. Confirm status becomes CONNECTED
+
+### Pilot Login Check
+1. Install APK on Device-1
+2. Login with `252630000111`
+3. Confirm WhatsApp OTP arrives
+4. Verify login
+5. Confirm inbox opens
+
+### Message Routing Check
+1. Send a message from `Sanabil School` message source
+2. Confirm message lands in Supabase
+3. Confirm it appears on Device-1
+4. Confirm it does not appear on the other devices
+
+## SCHOOL_B / schoolb
+
+- School ID: `4`
+- App Name: `School B Messages`
+- Package: `com.schoolb.messages`
+- Parents Source: `https://demo-schoolb-parents.example`
+- Messages Source: `https://demo-schoolb-messages.example`
+- OTP Node: `VPS-1`
+- OTP Status Target: `DISCONNECTED`
+- Test Parents:
+  - `252630000221`
+  - `252630000222`
+  - `252630000223`
+- Device: `Device-2`
+
+### Build Command
+```powershell
+npx eas-cli build --platform android --profile schoolb
+```
+
+### OTP Session Activation
+1. Open OTP dashboard for your VPS node
+2. Start session for school ID `4`
+3. Scan QR if status is not CONNECTED
+4. Confirm status becomes CONNECTED
+
+### Pilot Login Check
+1. Install APK on Device-2
+2. Login with `252630000221`
+3. Confirm WhatsApp OTP arrives
+4. Verify login
+5. Confirm inbox opens
+
+### Message Routing Check
+1. Send a message from `School B` message source
+2. Confirm message lands in Supabase
+3. Confirm it appears on Device-2
+4. Confirm it does not appear on the other devices
+
+## SCHOOL_C / schoolc
+
+- School ID: `5`
+- App Name: `School C Messages`
+- Package: `com.schoolc.messages`
+- Parents Source: `https://demo-schoolc-parents.example`
+- Messages Source: `https://demo-schoolc-messages.example`
+- OTP Node: `VPS-1`
+- OTP Status Target: `DISCONNECTED`
+- Test Parents:
+  - `252630000331`
+  - `252630000332`
+  - `252630000333`
+- Device: `Device-3`
+
+### Build Command
+```powershell
+npx eas-cli build --platform android --profile schoolc
+```
+
+### OTP Session Activation
+1. Open OTP dashboard for your VPS node
+2. Start session for school ID `5`
+3. Scan QR if status is not CONNECTED
+4. Confirm status becomes CONNECTED
+
+### Pilot Login Check
+1. Install APK on Device-3
+2. Login with `252630000331`
+3. Confirm WhatsApp OTP arrives
+4. Verify login
+5. Confirm inbox opens
+
+### Message Routing Check
+1. Send a message from `School C` message source
+2. Confirm message lands in Supabase
+3. Confirm it appears on Device-3
+4. Confirm it does not appear on the other devices
+
+## SCHOOL_D / schoold
+
+- School ID: `6`
+- App Name: `School D Messages`
+- Package: `com.schoold.messages`
+- Parents Source: `https://demo-schoold-parents.example`
+- Messages Source: `https://demo-schoold-messages.example`
+- OTP Node: `VPS-1`
+- OTP Status Target: `DISCONNECTED`
+- Test Parents:
+  - `252630000441`
+  - `252630000442`
+  - `252630000443`
+- Device: `Device-4`
+
+### Build Command
+```powershell
+npx eas-cli build --platform android --profile schoold
+```
+
+### OTP Session Activation
+1. Open OTP dashboard for your VPS node
+2. Start session for school ID `6`
+3. Scan QR if status is not CONNECTED
+4. Confirm status becomes CONNECTED
+
+### Pilot Login Check
+1. Install APK on Device-4
+2. Login with `252630000441`
+3. Confirm WhatsApp OTP arrives
+4. Verify login
+5. Confirm inbox opens
+
+### Message Routing Check
+1. Send a message from `School D` message source
+2. Confirm message lands in Supabase
+3. Confirm it appears on Device-4
+4. Confirm it does not appear on the other devices
+
+
+## Final Cross-School Isolation Test
+
+1. Send School B message and confirm only Device-2 receives it
+2. Send School C message and confirm only Device-3 receives it
+3. Send School D message and confirm only Device-4 receives it
+4. Attempt login with a parent from one school inside another school's app
+5. Confirm there is no cross-school leakage

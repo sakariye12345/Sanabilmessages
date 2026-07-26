@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { normalizeSomaliPhone } from '../_shared/phone.ts'
+import { isAuthorizedInternalRequest } from '../_shared/internal.ts'
 
 // Environment variables for Supabase (Service Role is required for RLS bypass)
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -11,8 +12,6 @@ const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
-
-console.log("Hello from sync-parents Edge Function!")
 
 interface School {
     id: number
@@ -43,15 +42,34 @@ function resolveParentsToken(school: School): string {
     return token
 }
 
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 20_000) {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+    try {
+        return await fetch(url, { ...init, signal: controller.signal })
+    } finally {
+        clearTimeout(timeout)
+    }
+}
+
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
+    }
+
+    if (!isAuthorizedInternalRequest(req)) {
+        return new Response(
+            JSON.stringify({ error: 'Unauthorized' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
     }
 
     try {
         const results = {
             schools_processed: 0,
             parents_upserted: 0,
+            parents_deactivated: 0,
             errors: [] as string[]
         }
 
@@ -70,7 +88,7 @@ Deno.serve(async (req) => {
             try {
                 // Fetch from CI3 API
                 const endpoint = `${resolveParentsBaseUrl(school)}/index.php/api/v1/parents/allowed`;
-                const response = await fetch(endpoint, {
+                const response = await fetchWithTimeout(endpoint, {
                     headers: {
                         'Authorization': `Bearer ${resolveParentsToken(school)}`,
                         'Content-Type': 'application/json'
@@ -81,37 +99,56 @@ Deno.serve(async (req) => {
                     throw new Error(`CI3 API Error: ${response.status} ${response.statusText}`);
                 }
 
-                const json = await response.json();
-                const parents = json.data || [];
+                const json = await response.json()
+                if (!Array.isArray(json.data)) {
+                    throw new Error('CI3 parents response must contain a data array')
+                }
 
-                console.log(`School ${school.name} returned ${parents.length} parents.`);
-
-                for (const parent of parents) {
+                const parents = json.data
+                const normalizedParents = parents.flatMap((parent: any) => {
                     const normalizedPhone = normalizeSomaliPhone(parent.phone_number || '')
                     if (!normalizedPhone) {
                         results.errors.push(`Parent ${parent.parent_id} (${school.name}) has no valid phone number.`)
-                        continue
+                        return []
                     }
 
-                    // Upsert to Supabase
-                    const { error: upsertError } = await supabase
-                        .from('allowed_parents')
-                        .upsert({
-                            school_id: school.id,
-                            parent_id: parent.parent_id,
-                            parent_name: parent.parent_name,
-                            phone_number: normalizedPhone,
-                            is_active: parent.is_active,
-                            last_sync_at: new Date().toISOString()
-                        }, { onConflict: 'school_id,parent_id' })
+                    return [{
+                        parent_id: parent.parent_id,
+                        parent_name: parent.parent_name,
+                        phone_number: normalizedPhone,
+                        is_active: parent.is_active !== false,
+                    }]
+                })
 
-                    if (upsertError) {
-                        results.errors.push(`Upsert Error (${school.name}, Parent ${parent.parent_id}): ${upsertError.message}`);
-                        continue;
-                    }
-                    results.parents_upserted++
+                console.log(`School ${school.name} returned ${parents.length} parents.`);
+
+                const { count: currentActiveCount, error: countError } = await supabase
+                    .from('allowed_parents')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('school_id', school.id)
+                    .eq('is_active', true)
+
+                if (countError) throw countError
+                if ((currentActiveCount || 0) > 0 && normalizedParents.length === 0) {
+                    throw new Error('Safety stop: CI3 returned zero valid parents for a non-empty school')
                 }
 
+                const { data: replacement, error: replacementError } = await supabase
+                    .rpc('replace_school_allowed_parents', {
+                        p_school_id: school.id,
+                        p_parents: normalizedParents,
+                    })
+                    .single()
+
+                if (replacementError) throw replacementError
+
+                const replacementResult = replacement as {
+                    upserted_count?: number | string
+                    deactivated_count?: number | string
+                } | null
+
+                results.parents_upserted += Number(replacementResult?.upserted_count || 0)
+                results.parents_deactivated += Number(replacementResult?.deactivated_count || 0)
                 results.schools_processed++
 
             } catch (e: any) {

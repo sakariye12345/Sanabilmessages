@@ -1,0 +1,9 @@
+scope,label,school_id,app_variant,target_device,status,owner,last_checked_at,notes
+school,SANABIL,1,sanabil,Device-1,PENDING,,,Reference school
+school,SCHOOL_B,4,schoolb,Device-2,PENDING,,,Pilot school 2
+school,SCHOOL_C,5,schoolc,Device-3,PENDING,,,Pilot school 3
+school,SCHOOL_D,6,schoold,Device-4,PENDING,,,Pilot school 4
+device,Device-1,1,sanabil,Device-1,PENDING,,,Install/login/message check pending
+device,Device-2,4,schoolb,Device-2,PENDING,,,Install/login/message check pending
+device,Device-3,5,schoolc,Device-3,PENDING,,,Install/login/message check pending
+device,Device-4,6,schoold,Device-4,PENDING,,,Install/login/message check pending

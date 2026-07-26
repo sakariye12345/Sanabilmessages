@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-nat
 import { useLocalSearchParams, Stack } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
 import dayjs from "dayjs";
+import { SchoolConfig } from "../../src/config/schoolConfig";
 
 export default function MessageDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -18,6 +19,7 @@ export default function MessageDetailScreen() {
 
         try {
             const { data, error } = await supabase.rpc("get_message_detail", {
+                p_school_id: SchoolConfig.SCHOOL_ID,
                 p_message_id: Number(id),
             }).maybeSingle();
 

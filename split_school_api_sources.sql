@@ -31,7 +31,7 @@ SET
   parents_api_url = 'https://demo.saafisystems.com',
   parents_api_token = 'YOUR_SCHOOL_API_TOKEN',
   messages_api_url = 'https://schoolsfls443dr4rsm53m.shihaab.tech',
-  messages_api_token = '3e8ea952f2a06672'
+  messages_api_token = 'YOUR_SCHOOL_MESSAGES_API_TOKEN'
 WHERE id = 1;
 
 COMMIT;

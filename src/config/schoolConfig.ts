@@ -6,10 +6,15 @@
 import Constants from 'expo-constants';
 
 const extra = Constants.expoConfig?.extra ?? {};
+const schoolId = Number(extra.schoolId);
+
+if (!Number.isSafeInteger(schoolId) || schoolId <= 0) {
+    throw new Error('Build config is missing a valid schoolId.');
+}
 
 export const SchoolConfig = {
     // Set at build time via APP_VARIANT in eas.json → app.config.js
-    SCHOOL_ID: (extra.schoolId ?? 1) as number,
+    SCHOOL_ID: schoolId,
     APP_NAME: (extra.appVariant ? extra.appVariant.charAt(0).toUpperCase() + extra.appVariant.slice(1) + ' Messages' : 'Sanabil Messages') as string,
     PRIMARY_COLOR: (extra.primaryColor ?? '#4CAF50') as string,
     SUPPORT_PHONE: (extra.supportPhone ?? '+25261xxxxxx') as string,

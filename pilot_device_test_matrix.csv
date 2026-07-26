@@ -1,0 +1,5 @@
+device_label,phone_owner_school,app_variant,expected_school_id,expected_app_name,test_parent_phone,otp_session_school,message_source_school,status,notes
+Device-1,Sanabil,sanabil,1,Sanabil Messages,252630000111,Sanabil,Sanabil,PENDING,Primary reference device
+Device-2,School B,schoolb,4,School B Messages,252630000221,School B,School B,PENDING,Pilot school 2
+Device-3,School C,schoolc,5,School C Messages,252630000331,School C,School C,PENDING,Pilot school 3
+Device-4,School D,schoold,6,School D Messages,252630000441,School D,School D,PENDING,Pilot school 4

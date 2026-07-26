@@ -6,6 +6,31 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const OTP_VALIDITY_MINUTES = 10
+
+function buildJsonResponse(body: Record<string, unknown>, status = 200) {
+    return new Response(JSON.stringify(body), {
+        status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+}
+
+function generateSecretPassword() {
+    return `otp-${crypto.randomUUID()}`
+}
+
+function generateOtpCode() {
+    const range = 900_000
+    const maxUnbiasedValue = 0x1_0000_0000 - (0x1_0000_0000 % range)
+    const randomValue = new Uint32Array(1)
+
+    do {
+        crypto.getRandomValues(randomValue)
+    } while (randomValue[0] >= maxUnbiasedValue)
+
+    return String(100_000 + (randomValue[0] % range))
+}
+
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
@@ -17,85 +42,211 @@ Deno.serve(async (req) => {
     )
 
     try {
-        const { phone } = await req.json()
+        const { phone, school_id } = await req.json()
+        const schoolId = Number(school_id)
 
-        if (!phone) throw new Error("Phone number required")
+        if (!phone || !Number.isSafeInteger(schoolId) || schoolId <= 0) {
+            throw new Error('Phone number and school_id are required')
+        }
 
         const cleanPhone = normalizeSomaliPhone(phone)
-        if (!cleanPhone) throw new Error("Phone number required")
+        if (!cleanPhone) throw new Error('Phone number required')
 
-        // ─────────────────────────────────────────────
-        // 1. Find which school this parent belongs to
-        // ─────────────────────────────────────────────
         const { data: parent, error: parentError } = await supabase
             .from('allowed_parents')
             .select('school_id, phone_number')
+            .eq('school_id', schoolId)
             .eq('phone_number', cleanPhone)
             .eq('is_active', true)
             .single()
 
         if (parentError || !parent) {
-            console.error(`Parent not found for ${cleanPhone}:`, parentError?.message)
-            throw new Error("Lambarkan nidaamka kuma jiro. La xidhiidh maamulka.")
+            console.error(`[OTP] Parent not found for ${cleanPhone}:`, parentError?.message)
+            throw new Error('Lambarkan nidaamka kuma jiro. La xidhiidh maamulka.')
         }
 
-        // ─────────────────────────────────────────────
-        // 2. Fetch school's OTP gateway config
-        // ─────────────────────────────────────────────
         const { data: school, error: schoolError } = await supabase
             .from('schools')
-            .select('id, name, otp_gateway_url, otp_gateway_key, otp_sender_id')
-            .eq('id', parent.school_id)
+            .select(`
+                id,
+                name,
+                otp_is_paused,
+                otp_pause_reason,
+                otp_pause_until,
+                otp_cooldown_seconds,
+                otp_daily_cap
+            `)
+            .eq('id', schoolId)
+            .eq('is_active', true)
             .single()
 
         if (schoolError || !school) {
             throw new Error(`School config not found for school_id: ${parent.school_id}`)
         }
 
-        // ─────────────────────────────────────────────
-        // 3. Generate 6-digit OTP code
-        // ─────────────────────────────────────────────
-        const code = Math.floor(100000 + Math.random() * 900000).toString()
-        console.log(`[OTP] Generating for ${cleanPhone} (${school.name}): ${code}`)
+        if (school.otp_is_paused) {
+            const pauseUntil = school.otp_pause_until ? new Date(school.otp_pause_until) : null
+            const stillPaused = !pauseUntil || pauseUntil.getTime() > Date.now()
 
-        // ─────────────────────────────────────────────
-        // 4. Create/Update Supabase Auth user
-        //    (Code is used as temporary password)
-        // ─────────────────────────────────────────────
-        let userId = ''
+            if (stillPaused) {
+                return buildJsonResponse({
+                    success: false,
+                    status: 'paused',
+                    paused: true,
+                    message: school.otp_pause_reason || 'OTP service-ku si ku meel gaar ah ayuu u hakad galay.',
+                    pause_until: school.otp_pause_until ?? null,
+                    cooldown_seconds: Number(school.otp_cooldown_seconds || 30),
+                }, 429)
+            }
+
+            await supabase
+                .from('schools')
+                .update({
+                    otp_is_paused: false,
+                    otp_pause_reason: null,
+                    otp_pause_until: null,
+                })
+                .eq('id', school.id)
+        }
+
+        const cooldownSeconds = Number(school.otp_cooldown_seconds || 30)
+        const now = Date.now()
+        const dailyCap = Math.max(1, Number(school.otp_daily_cap || 250))
+        const todayUtc = new Date(now)
+        todayUtc.setUTCHours(0, 0, 0, 0)
+
+        const { count: dailyRequestCount, error: dailyCountError } = await supabase
+            .from('otp_queue')
+            .select('id', { count: 'exact', head: true })
+            .eq('school_id', school.id)
+            .gte('created_at', todayUtc.toISOString())
+
+        if (dailyCountError) throw dailyCountError
+        if ((dailyRequestCount || 0) >= dailyCap) {
+            return buildJsonResponse({
+                success: false,
+                status: 'daily_cap_reached',
+                paused: true,
+                cooldown_seconds: cooldownSeconds,
+                message: 'School-kan wuxuu gaaray xadka OTP-ga maanta. La xidhiidh maamulka.',
+            }, 429)
+        }
+
+        const { data: recentActiveRequest, error: recentActiveError } = await supabase
+            .from('otp_queue')
+            .select('id, created_at, status')
+            .eq('school_id', school.id)
+            .eq('phone', cleanPhone)
+            .in('status', ['PENDING', 'PROCESSING', 'SENT'])
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+        if (recentActiveError) throw recentActiveError
+
+        if (recentActiveRequest) {
+            const requestCreatedAt = new Date(recentActiveRequest.created_at).getTime()
+            const expiresAt = requestCreatedAt + OTP_VALIDITY_MINUTES * 60 * 1000
+
+            if (now < expiresAt) {
+                const remainingSeconds = Math.max(1, Math.ceil((expiresAt - now) / 1000))
+                return buildJsonResponse({
+                    success: true,
+                    status: 'existing_active',
+                    queued: false,
+                    reused: true,
+                    provider: 'whatsapp',
+                    cooldown_seconds: remainingSeconds,
+                    message: `OTP hore ayaa kuu yaal oo wali shaqaynaya. Fadlan isticmaal kii ugu dambeeyay ama sug ilaa uu ka dhacayo.`,
+                })
+            }
+
+            await supabase
+                .from('otp_queue')
+                .update({
+                    status: 'FAILED',
+                    error_message: 'OTP expired before a new request was created.',
+                    updated_at: new Date(now).toISOString(),
+                    provider: 'whatsapp',
+                })
+                .eq('id', recentActiveRequest.id)
+        }
+
+        const cooldownThreshold = new Date(now - cooldownSeconds * 1000).toISOString()
+
+        const { data: recentRequest, error: recentRequestError } = await supabase
+            .from('otp_queue')
+            .select('id, created_at, status')
+            .eq('school_id', school.id)
+            .eq('phone', cleanPhone)
+            .gte('created_at', cooldownThreshold)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+        if (recentRequestError) throw recentRequestError
+
+        if (recentRequest) {
+            return buildJsonResponse({
+                success: true,
+                status: 'existing_active',
+                queued: false,
+                reused: true,
+                provider: 'whatsapp',
+                cooldown_seconds: cooldownSeconds,
+                message: `OTP hore ayaa loo codsaday. Fadlan sug ${cooldownSeconds} ilbiriqsi ka hor intaadan mar kale codsan.`,
+            })
+        }
+
         const authPhone = toE164SomaliPhone(phone)
-        if (!authPhone) throw new Error("Phone number required")
+        if (!authPhone) throw new Error('Phone number required')
 
+        const code = generateOtpCode()
+        const invalidationPassword = generateSecretPassword()
+
+        let userId = ''
         const { data: createdUser, error: createError } = await supabase.auth.admin.createUser({
             phone: authPhone,
-            password: code,
+            password: invalidationPassword,
             email_confirm: true,
-            phone_confirm: true
+            phone_confirm: true,
         })
 
         if (createError) {
-            // User already exists — get their ID and update password
-            console.log("User exists, finding ID via RPC...")
+            console.log('[OTP] User exists, finding ID via RPC...')
             let { data: uid } = await supabase.rpc('get_user_id_by_phone', { p_phone: authPhone })
 
-            // Fallback: try without '+'
             if (!uid) {
-                const { data: uid2 } = await supabase.rpc('get_user_id_by_phone', { p_phone: cleanPhone })
-                uid = uid2
+                const { data: fallbackUid } = await supabase.rpc('get_user_id_by_phone', { p_phone: cleanPhone })
+                uid = fallbackUid
             }
 
-            if (!uid) throw new Error("User conflict but could not find user ID.")
+            if (!uid) throw new Error('User conflict but could not find user ID.')
 
             userId = uid
-            const { error: updateError } = await supabase.auth.admin.updateUserById(userId, { password: code })
+            const { error: updateError } = await supabase.auth.admin.updateUserById(userId, { password: invalidationPassword })
             if (updateError) throw updateError
         } else {
             userId = createdUser.user.id
         }
 
-        // ─────────────────────────────────────────────
-        // 5. Queue OTP for delivery (Python dispatcher reads this)
-        // ─────────────────────────────────────────────
+        const nowIso = new Date(now).toISOString()
+        const expiresAtIso = new Date(now + OTP_VALIDITY_MINUTES * 60 * 1000).toISOString()
+
+        const { error: supersedeError } = await supabase
+            .from('otp_queue')
+            .update({
+                status: 'FAILED',
+                error_message: 'Superseded by a newer OTP request.',
+                updated_at: nowIso,
+                provider: 'whatsapp',
+            })
+            .eq('school_id', school.id)
+            .eq('phone', cleanPhone)
+            .in('status', ['PENDING', 'PROCESSING', 'SENT'])
+
+        if (supersedeError) throw supersedeError
+
         const { error: queueError } = await supabase
             .from('otp_queue')
             .insert({
@@ -104,59 +255,27 @@ Deno.serve(async (req) => {
                 school_id: school.id,
                 status: 'PENDING',
                 provider: 'whatsapp',
-                updated_at: new Date().toISOString(),
+                updated_at: nowIso,
+                expires_at: expiresAtIso,
+                verify_attempt_count: 0,
             })
 
         if (queueError) throw queueError
 
-        // ─────────────────────────────────────────────
-        // 6. If school has a gateway configured, call it directly
-        //    Otherwise: falls back to Python dispatcher (WhatsApp)
-        // ─────────────────────────────────────────────
-        if (school.otp_gateway_url && school.otp_gateway_key) {
-            console.log(`[OTP] Sending via school gateway: ${school.otp_gateway_url}`)
-            try {
-                const msgBody = `*${school.name}*\nKoodkaaga gelitaanka (OTP):\n\n*${code}*\n\nWuxuu ansax yahay 10 daqiiqo.`
-                await fetch(school.otp_gateway_url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${school.otp_gateway_key}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        to: cleanPhone,
-                        from: school.otp_sender_id ?? school.name,
-                        message: msgBody
-                    })
-                })
-                // Mark as SENT immediately if gateway returns success
-                await supabase.from('otp_queue')
-                    .update({
-                        status: 'SENT',
-                        provider: 'gateway',
-                        sent_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                    })
-                    .eq('phone', cleanPhone)
-                    .eq('code', code)
-            } catch (gwErr: any) {
-                console.error("[OTP] Gateway error (non-blocking):", gwErr.message)
-                // Falls through — Python dispatcher will retry
-            }
-        } else {
-            console.log(`[OTP] No gateway configured for ${school.name}. Python dispatcher will handle.`)
-        }
+        console.log(`[OTP] Queued for WhatsApp delivery only: ${cleanPhone} (${school.name})`)
 
-        return new Response(
-            JSON.stringify({ success: true, message: 'OTP queued' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-
+        return buildJsonResponse({
+            success: true,
+            status: 'queued',
+            queued: true,
+            provider: 'whatsapp',
+            school_id: school.id,
+            cooldown_seconds: cooldownSeconds,
+            expires_at: expiresAtIso,
+            message: 'OTP queued for WhatsApp delivery.',
+        })
     } catch (error: any) {
-        console.error("[OTP Error]", error.message)
-        return new Response(
-            JSON.stringify({ error: error.message }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        console.error('[OTP Error]', error.message)
+        return buildJsonResponse({ error: error.message }, 400)
     }
 })

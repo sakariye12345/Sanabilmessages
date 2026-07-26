@@ -1,8 +1,10 @@
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { supabase } from '../lib/supabase';
-import { normalizeSomaliPhone } from '../utils/phone';
+
+type PushTokenRegistrationOptions = {
+    requestPermission?: boolean;
+};
 
 const getNotifications = () => {
     try {
@@ -12,13 +14,14 @@ const getNotifications = () => {
     }
 };
 
-export async function registerForPushNotificationsAsync() {
+export async function registerForPushNotificationsAsync(options: PushTokenRegistrationOptions = {}) {
     let token;
+    const { requestPermission = true } = options;
 
     const isExpoGo = Constants.appOwnership === 'expo';
     if (isExpoGo) {
-        console.log('[Notifications] Expo Go detected. Using SIMULATED token to prevent crash.');
-        return `ExponentPushToken[SIMULATED-${Device.modelName?.replace(/\s/g, '-') || 'DEVICE'}]`;
+        console.log('[Notifications] Expo Go cannot register production push tokens.');
+        return null;
     }
 
     const Notifications = getNotifications();
@@ -36,61 +39,32 @@ export async function registerForPushNotificationsAsync() {
     if (Device.isDevice) {
         const { status: existingStatus } = await Notifications.getPermissionsAsync();
         let finalStatus = existingStatus;
-        if (existingStatus !== 'granted') {
+
+        if (existingStatus !== 'granted' && requestPermission) {
             const { status } = await Notifications.requestPermissionsAsync();
             finalStatus = status;
         }
+
         if (finalStatus !== 'granted') {
-            console.log('Failed to get push token for push notification!');
-            return;
+            console.log('[Notifications] Permission not granted. Skipping push token sync.');
+            return null;
         }
 
         try {
             token = (await Notifications.getExpoPushTokenAsync({
                 projectId: Constants.expoConfig?.extra?.eas?.projectId,
             })).data;
-            console.log('[Notifications] Token:', token);
+            console.log('[Notifications] Push token registered.');
         } catch (e) {
-            console.log('[Notifications] Failed to get real token (likely Expo Go limitation). Using SIMULATED token.');
-            token = `ExponentPushToken[SIMULATED-${Device.modelName?.replace(/\s/g, '-') || 'DEVICE'}]`;
+            console.log('[Notifications] Failed to get a production push token.');
+            token = null;
         }
     } else {
         console.log('[Notifications] Must use physical device for Push Notifications');
-        token = 'ExponentPushToken[SIMULATOR]';
+        token = null;
     }
 
     return token;
 }
 
-export async function syncDeviceToken(userPhone: string) {
-    try {
-        const token = await registerForPushNotificationsAsync();
-        if (!token) return null;
-
-        const normalizedPhone = normalizeSomaliPhone(userPhone);
-        if (!normalizedPhone) return null;
-
-        console.log(`[Notifications] Syncing token for ${normalizedPhone}...`);
-
-        const { error } = await supabase
-            .from('user_devices')
-            .upsert({
-                phone_number: normalizedPhone,
-                fcm_token: token,
-                platform: Platform.OS,
-                is_active: true,
-                last_seen_at: new Date().toISOString()
-            }, { onConflict: 'fcm_token' });
-
-        if (error) {
-            console.error('[Notifications] Sync Error:', error);
-            throw error;
-        }
-
-        console.log('[Notifications] Token synced successfully!');
-        return token;
-    } catch (error) {
-        console.error('[Notifications] Failed to sync token:', error);
-        return null;
-    }
-}
+export type { PushTokenRegistrationOptions };

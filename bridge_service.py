@@ -1,5 +1,6 @@
 import requests
 import time
+import os
 from rich.console import Console
 from datetime import datetime
 
@@ -10,7 +11,9 @@ SUPABASE_URL = "https://fmmatzjhhyhtkpabyhih.supabase.co"
 SUPABASE_KEY = "YOUR_SUPABASE_PUBLISHABLE_KEY"
 
 CI3_BASE_URL = "https://schoolsfls443dr4rsm53m.shihaab.tech"
-CI3_TOKEN = "3e8ea952f2a06672"
+CI3_TOKEN = os.environ.get("CI3_API_TOKEN", "").strip()
+if not CI3_TOKEN:
+    raise RuntimeError("CI3_API_TOKEN environment variable is required")
 
 POLL_INTERVAL = 5
 console = Console()

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
-import { Colors } from '../constants/Colors';
+import { Colors } from '../../constants/Colors';
 
 export function OfflineBanner() {
     const [isOffline, setIsOffline] = useState(false);
@@ -22,10 +22,11 @@ export function OfflineBanner() {
         return () => unsubscribe();
     }, []);
 
-    if (!isOffline && heightAnim._value === 0) return null;
-
     return (
-        <Animated.View style={[s.container, { height: heightAnim }]}>
+        <Animated.View
+            pointerEvents={isOffline ? 'auto' : 'none'}
+            style={[s.container, { height: heightAnim }]}
+        >
             <Text style={s.text}>No Internet Connection</Text>
         </Animated.View>
     );

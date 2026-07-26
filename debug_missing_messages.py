@@ -49,7 +49,9 @@ def debug_messages():
 def inspect_api_keys():
     import requests
     CI3_URL = "https://schoolsfls443dr4rsm53m.shihaab.tech"
-    TOKEN = "3e8ea952f2a06672"
+    TOKEN = os.environ.get("CI3_API_TOKEN", "").strip()
+    if not TOKEN:
+        raise RuntimeError("CI3_API_TOKEN environment variable is required")
     
     print("--- Inspecting API Item 501 Keys ---")
     headers = {"Authorization": TOKEN, "Content-Type": "application/json"}

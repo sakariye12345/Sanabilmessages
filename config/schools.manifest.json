@@ -1,0 +1,100 @@
+{
+  "schools": {
+    "sanabil": {
+      "name": "Sanabil Messages",
+      "slug": "SanabilMessages",
+      "scheme": "sanabilmessages",
+      "package": "com.sanabil.messages",
+      "schoolId": 1,
+      "primaryColor": "#4CAF50",
+      "supportPhone": "+25261xxxxxx",
+      "website": "https://sanabil.so",
+      "assets": {
+        "icon": "./assets/icon.png",
+        "adaptiveIcon": "./assets/adaptive-icon.png",
+        "splashIcon": "./assets/splash-icon.png",
+        "favicon": "./assets/favicon.png"
+      }
+    },
+    "alsunna": {
+      "name": "Alsunna Messages",
+      "slug": "AlsunnaMessages",
+      "scheme": "alsunnamessages",
+      "package": "com.alsunna.messages",
+      "schoolId": 2,
+      "primaryColor": "#1565C0",
+      "supportPhone": "+25262xxxxxx",
+      "website": "https://alsunna.so",
+      "assets": {
+        "icon": "./assets/alsunna-icon.png",
+        "adaptiveIcon": "./assets/alsunna-adaptive-icon.png",
+        "splashIcon": "./assets/alsunna-splash-icon.png",
+        "favicon": "./assets/favicon.png"
+      }
+    },
+    "alxikma": {
+      "name": "Al-Xikma Messages",
+      "slug": "AlxikmaMessages",
+      "scheme": "alxikmamessages",
+      "package": "com.alxikma.messages",
+      "schoolId": 3,
+      "primaryColor": "#6A1B9A",
+      "supportPhone": "+25263xxxxxx",
+      "website": "https://alxikma.so",
+      "assets": {
+        "icon": "./assets/alxikma-icon.png",
+        "adaptiveIcon": "./assets/alxikma-adaptive-icon.png",
+        "splashIcon": "./assets/alxikma-splash-icon.png",
+        "favicon": "./assets/favicon.png"
+      }
+    },
+    "schoolb": {
+      "name": "School B Messages",
+      "slug": "SchoolBMessages",
+      "scheme": "schoolbmessages",
+      "package": "com.schoolb.messages",
+      "schoolId": 4,
+      "primaryColor": "#1565C0",
+      "supportPhone": "+25262xxxxxx",
+      "website": "https://schoolb.example",
+      "assets": {
+        "icon": "./assets/schoolb-icon.png",
+        "adaptiveIcon": "./assets/schoolb-adaptive-icon.png",
+        "splashIcon": "./assets/schoolb-splash-icon.png",
+        "favicon": "./assets/favicon.png"
+      }
+    },
+    "schoolc": {
+      "name": "School C Messages",
+      "slug": "SchoolCMessages",
+      "scheme": "schoolcmessages",
+      "package": "com.schoolc.messages",
+      "schoolId": 5,
+      "primaryColor": "#00897B",
+      "supportPhone": "+25263xxxxxx",
+      "website": "https://schoolc.example",
+      "assets": {
+        "icon": "./assets/schoolc-icon.png",
+        "adaptiveIcon": "./assets/schoolc-adaptive-icon.png",
+        "splashIcon": "./assets/schoolc-splash-icon.png",
+        "favicon": "./assets/favicon.png"
+      }
+    },
+    "schoold": {
+      "name": "School D Messages",
+      "slug": "SchoolDMessages",
+      "scheme": "schooldmessages",
+      "package": "com.schoold.messages",
+      "schoolId": 6,
+      "primaryColor": "#6A1B9A",
+      "supportPhone": "+25264xxxxxx",
+      "website": "https://schoold.example",
+      "assets": {
+        "icon": "./assets/schoold-icon.png",
+        "adaptiveIcon": "./assets/schoold-adaptive-icon.png",
+        "splashIcon": "./assets/schoold-splash-icon.png",
+        "favicon": "./assets/favicon.png"
+      }
+    }
+  }
+}
