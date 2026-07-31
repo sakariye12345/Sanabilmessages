@@ -63,8 +63,7 @@ function getAppVariant() {
   return typeof variant === "string" && variant.trim() ? variant.trim() : "sanabil";
 }
 
-async function runDeviceRegistration(
-  markLogin: boolean,
+async function touchTrustedDevice(
   includePushToken: boolean,
   pushOptions: PushTokenRegistrationOptions = {}
 ) {
@@ -73,14 +72,13 @@ async function runDeviceRegistration(
     ? await registerForPushNotificationsAsync(pushOptions)
     : null;
 
-  const { data, error } = await supabase.rpc("register_my_device", {
+  const { data, error } = await supabase.rpc("touch_my_device", {
     p_school_id: SchoolConfig.SCHOOL_ID,
     p_device_id: deviceId,
     p_device_name: getDeviceName(),
     p_platform: Platform.OS,
     p_fcm_token: pushToken ?? null,
     p_app_variant: getAppVariant(),
-    p_mark_login: markLogin,
   });
 
   if (error) throw error;
@@ -96,7 +94,16 @@ export async function registerCurrentDeviceAfterLogin(userPhone: string) {
   const normalizedPhone = normalizeSomaliPhone(userPhone);
   if (!normalizedPhone) throw new Error("Lambarka telefoonka sax ma aha.");
 
-  return runDeviceRegistration(true, true, { requestPermission: true });
+  return touchTrustedDevice(true, { requestPermission: true });
+}
+
+export async function getDeviceEnrollmentPayload() {
+  return {
+    device_id: await getOrCreateDeviceId(),
+    device_name: getDeviceName(),
+    platform: Platform.OS,
+    app_variant: getAppVariant(),
+  };
 }
 
 export async function ensureCurrentDeviceAccess(userPhone: string) {
@@ -119,12 +126,15 @@ export async function ensureCurrentDeviceAccess(userPhone: string) {
     return { allowed: false as const, reason: "revoked", deviceId };
   }
 
-  // Bootstrap legacy sessions and keep active devices warm without asking for OTP again.
-  await runDeviceRegistration(false, false);
+  if (!device) {
+    return { allowed: false as const, reason: "untrusted", deviceId };
+  }
+
+  await touchTrustedDevice(false);
 
   return {
     allowed: true as const,
-    reason: device ? "trusted" : "bootstrapped",
+    reason: "trusted" as const,
     deviceId,
   };
 }
@@ -138,7 +148,7 @@ export async function syncCurrentDevicePushToken(
     throw new Error("Lambarka telefoonka sax ma aha.");
   }
 
-  return runDeviceRegistration(false, true, options);
+  return touchTrustedDevice(true, options);
 }
 
 export async function revokeCurrentDeviceTrust() {

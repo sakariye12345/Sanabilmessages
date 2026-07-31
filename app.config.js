@@ -37,7 +37,7 @@ module.exports = {
   expo: {
     owner: "alsunna123",
     name: config.name,
-    slug: "sanabil-messages-platform",
+    slug: config.slug,
     scheme: config.scheme,
     version: "1.0.0",
     orientation: "portrait",
@@ -84,7 +84,7 @@ module.exports = {
       appVariant: APP_VARIANT,
       router: {},
       eas: {
-        projectId: "fdcc05a4-f719-474b-a1e4-889a90ca628d",
+        projectId: config.easProjectId,
       },
     },
   },

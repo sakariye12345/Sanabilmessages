@@ -58,17 +58,17 @@ function attachAuthListenerOnce(set: (partial: Partial<AuthState>) => void) {
   if (authListenerAttached) return;
 
   authListenerAttached = true;
-  supabase.auth.onAuthStateChange(async (_event: AuthChangeEvent, session) => {
-    try {
+  supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session) => {
+    setTimeout(() => {
       if (!session) {
         set({ session: null, user: null });
         return;
       }
 
-      await syncSessionTrust(session, set);
-    } catch (error: any) {
-      console.warn("Device trust sync failed:", error?.message || error);
-    }
+      syncSessionTrust(session, set).catch((error: any) => {
+        console.warn("Device trust sync failed:", error?.message || error);
+      });
+    }, 0);
   });
 }
 

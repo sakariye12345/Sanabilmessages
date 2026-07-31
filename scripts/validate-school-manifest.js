@@ -9,6 +9,7 @@ const productionMode = process.argv.includes("--production");
 const requiredFields = [
   "name",
   "slug",
+  "easProjectId",
   "scheme",
   "package",
   "schoolId",
@@ -39,6 +40,8 @@ if (!variants.length) {
 
 const seenPackages = new Set();
 const seenSchoolIds = new Set();
+const seenSlugs = new Set();
+const seenEasProjects = new Set();
 
 for (const [variant, config] of variants) {
   for (const field of requiredFields) {
@@ -53,6 +56,18 @@ for (const [variant, config] of variants) {
 
   if (!/^com\.[a-z0-9]+(?:\.[a-z0-9]+)+$/i.test(config.package || "")) {
     fail(`${variant}: invalid Android package '${config.package}'`);
+  }
+
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(config.slug || "")) {
+    fail(`${variant}: invalid Expo slug '${config.slug}'`);
+  }
+
+  const hasValidEasProjectId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    .test(config.easProjectId || "");
+  if (!hasValidEasProjectId) {
+    const message = `${variant}: easProjectId must be the UUID of that school's EAS project`;
+    if (productionMode) fail(message);
+    else console.warn(`WARNING: ${message}. Push notification builds are not ready.`);
   }
 
   if (!/^#[0-9a-f]{6}$/i.test(config.primaryColor || "")) {
@@ -75,6 +90,20 @@ for (const [variant, config] of variants) {
     fail(`${variant}: duplicate android package '${config.package}'`);
   }
   seenPackages.add(config.package);
+
+  if (seenSlugs.has(config.slug)) {
+    fail(`${variant}: duplicate Expo slug '${config.slug}'`);
+  }
+  seenSlugs.add(config.slug);
+
+  if (hasValidEasProjectId) {
+    if (seenEasProjects.has(config.easProjectId)) {
+      const message = `${variant}: duplicate EAS project ID '${config.easProjectId}'`;
+      if (productionMode) fail(message);
+      else console.warn(`WARNING: ${message}. Client apps should use independent EAS projects.`);
+    }
+    seenEasProjects.add(config.easProjectId);
+  }
 
   if (seenSchoolIds.has(String(config.schoolId))) {
     fail(`${variant}: duplicate schoolId '${config.schoolId}'`);

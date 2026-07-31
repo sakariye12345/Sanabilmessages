@@ -5,6 +5,10 @@ import { isAuthorizedInternalRequest } from '../_shared/internal.ts'
 // Environment variables for Supabase (Service Role is required for RLS bypass)
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const configuredMinRatio = Number(Deno.env.get('PARENT_SYNC_MIN_RATIO') || 0.5)
+const PARENT_SYNC_MIN_RATIO = Number.isFinite(configuredMinRatio)
+    ? Math.min(1, Math.max(0.1, configuredMinRatio))
+    : 0.5
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
@@ -17,7 +21,7 @@ interface School {
     id: number
     name: string
     ci3_url: string
-    ci3_token: string
+    ci3_token?: string | null
     parents_api_url?: string | null
     parents_api_token?: string | null
 }
@@ -75,9 +79,7 @@ Deno.serve(async (req) => {
 
         // 1. Fetch Active Schools
         const { data: schools, error: schoolError } = await supabase
-            .from('schools')
-            .select('*')
-            .eq('is_active', true)
+            .rpc('get_active_school_integrations')
 
         if (schoolError || !schools) {
             throw new Error(`Failed to fetch schools: ${schoolError?.message}`)
@@ -131,6 +133,17 @@ Deno.serve(async (req) => {
                 if (countError) throw countError
                 if ((currentActiveCount || 0) > 0 && normalizedParents.length === 0) {
                     throw new Error('Safety stop: CI3 returned zero valid parents for a non-empty school')
+                }
+
+                const activeIncomingCount = normalizedParents.filter((parent: any) => parent.is_active).length
+                if (
+                    (currentActiveCount || 0) >= 10 &&
+                    activeIncomingCount / Number(currentActiveCount) < PARENT_SYNC_MIN_RATIO
+                ) {
+                    throw new Error(
+                        `Safety stop: active parent snapshot dropped from ${currentActiveCount} ` +
+                        `to ${activeIncomingCount} (minimum ratio ${PARENT_SYNC_MIN_RATIO}).`
+                    )
                 }
 
                 const { data: replacement, error: replacementError } = await supabase

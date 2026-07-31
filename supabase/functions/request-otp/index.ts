@@ -8,10 +8,14 @@ const corsHeaders = {
 
 const OTP_VALIDITY_MINUTES = 10
 
-function buildJsonResponse(body: Record<string, unknown>, status = 200) {
+function buildJsonResponse(
+    body: Record<string, unknown>,
+    status = 200,
+    extraHeaders: Record<string, string> = {},
+) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...extraHeaders, 'Content-Type': 'application/json' },
     })
 }
 
@@ -31,14 +35,40 @@ function generateOtpCode() {
     return String(100_000 + (randomValue[0] % range))
 }
 
+function resolveClientAddress(request: Request) {
+    const directAddress =
+        request.headers.get('cf-connecting-ip') ||
+        request.headers.get('x-real-ip')
+    if (directAddress) return directAddress.trim().slice(0, 128)
+
+    const forwarded = request.headers.get('x-forwarded-for') || ''
+    return (forwarded.split(',')[0]?.trim() || 'unknown').slice(0, 128)
+}
+
+async function hmacSha256(value: string, secret: string) {
+    const encoder = new TextEncoder()
+    const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(secret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign'],
+    )
+    const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(value))
+    return Array.from(new Uint8Array(signature))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('')
+}
+
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
 
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     const supabase = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        serviceRoleKey
     )
 
     try {
@@ -51,6 +81,42 @@ Deno.serve(async (req) => {
 
         const cleanPhone = normalizeSomaliPhone(phone)
         if (!cleanPhone) throw new Error('Phone number required')
+
+        const rateSecret = Deno.env.get('OTP_RATE_LIMIT_PEPPER') || serviceRoleKey
+        if (!rateSecret) throw new Error('OTP rate-limit secret is not configured')
+
+        const [phoneHash, ipHash] = await Promise.all([
+            hmacSha256(`${schoolId}:${cleanPhone}`, rateSecret),
+            hmacSha256(`${schoolId}:${resolveClientAddress(req)}`, rateSecret),
+        ])
+
+        const { data: rateLimit, error: rateLimitError } = await supabase
+            .rpc('consume_otp_request_rate_limit', {
+                p_school_id: schoolId,
+                p_phone_hash: phoneHash,
+                p_ip_hash: ipHash,
+                p_window_seconds: 60,
+                p_phone_limit: 3,
+                p_ip_limit: 20,
+            })
+            .single()
+
+        if (rateLimitError) throw rateLimitError
+
+        const rateResult = rateLimit as {
+            allowed?: boolean
+            retry_after_seconds?: number | string
+        } | null
+
+        if (!rateResult?.allowed) {
+            const retryAfter = Math.max(1, Number(rateResult?.retry_after_seconds || 60))
+            return buildJsonResponse({
+                success: false,
+                status: 'rate_limited',
+                cooldown_seconds: retryAfter,
+                message: 'Codsiyo badan ayaa la sameeyey. Fadlan wax yar kadib isku day.',
+            }, 429, { 'Retry-After': String(retryAfter) })
+        }
 
         const { data: parent, error: parentError } = await supabase
             .from('allowed_parents')

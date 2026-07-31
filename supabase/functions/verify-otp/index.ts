@@ -19,6 +19,13 @@ function generateSessionPassword() {
     return `session-${crypto.randomUUID()}-${crypto.randomUUID()}`
 }
 
+function optionalDeviceText(value: unknown, maxLength: number) {
+    if (typeof value !== 'string') return null
+    const cleanValue = value.trim()
+    if (!cleanValue) return null
+    return cleanValue.slice(0, maxLength)
+}
+
 function verificationError(status: string, attemptsRemaining = 0) {
     const messages: Record<string, string> = {
         parent_not_allowed: 'Lambarkan school-kan kama diiwaangashana. La xidhiidh maamulka.',
@@ -49,11 +56,26 @@ Deno.serve(async (req) => {
     })
 
     try {
-        const { phone, code, school_id } = await req.json()
+        const {
+            phone,
+            code,
+            school_id,
+            device_id,
+            device_name,
+            platform,
+            app_variant,
+        } = await req.json()
         const schoolId = Number(school_id)
+        const cleanDeviceId = typeof device_id === 'string' ? device_id.trim() : ''
 
-        if (!phone || !code || !Number.isSafeInteger(schoolId) || schoolId <= 0) {
-            throw new Error('Phone number, OTP code, and school_id are required.')
+        if (
+            !phone ||
+            !code ||
+            !Number.isSafeInteger(schoolId) ||
+            schoolId <= 0 ||
+            !/^[A-Za-z0-9._:-]{8,160}$/.test(cleanDeviceId)
+        ) {
+            throw new Error('Phone number, OTP code, school_id, and a valid device_id are required.')
         }
 
         const cleanPhone = normalizeSomaliPhone(phone)
@@ -122,6 +144,17 @@ Deno.serve(async (req) => {
         if (signInError || !signInData.session) {
             throw signInError || new Error('Session lama abuuri karin.')
         }
+
+        const { error: enrollmentError } = await adminClient.rpc('enroll_verified_device', {
+            p_school_id: schoolId,
+            p_phone: cleanPhone,
+            p_device_id: cleanDeviceId,
+            p_device_name: optionalDeviceText(device_name, 120),
+            p_platform: optionalDeviceText(platform, 32),
+            p_app_variant: optionalDeviceText(app_variant, 64),
+        })
+
+        if (enrollmentError) throw enrollmentError
 
         const nowIso = new Date().toISOString()
         await adminClient.from('otp_logs').insert({

@@ -25,7 +25,9 @@ const validRows = matrix.filter((row) => {
     "school_id",
     "app_variant",
     "parents_api_url",
+    "parents_api_secret_name",
     "messages_api_url",
+    "messages_api_secret_name",
     "otp_server_node_id",
     "test_parent_1",
     "test_parent_2",
@@ -38,16 +40,14 @@ const skipped = matrix.filter((row) => !validRows.includes(row));
 
 const schoolValues = validRows.map((row) => {
   const ci3Url = !isPlaceholder(row.messages_api_url) ? row.messages_api_url : row.parents_api_url;
-  const ci3Token = !isPlaceholder(row.messages_api_token) ? row.messages_api_token : row.parents_api_token;
   return `  (
     ${Number(row.school_id)},
     ${sqlString(row.school_name)},
     ${sqlString(ci3Url)},
-    ${sqlString(ci3Token)},
     ${sqlString(row.parents_api_url)},
-    ${sqlString(isPlaceholder(row.parents_api_token) ? null : row.parents_api_token)},
     ${sqlString(row.messages_api_url)},
-    ${sqlString(isPlaceholder(row.messages_api_token) ? null : row.messages_api_token)},
+    ${sqlString(row.parents_api_secret_name)},
+    ${sqlString(row.messages_api_secret_name)},
     TRUE,
     ${sqlString(row.otp_server_node_id)},
     ${sqlString(row.wa_session_status || "DISCONNECTED")},
@@ -67,6 +67,25 @@ const parentValues = validRows.flatMap((row) => {
   )`);
 });
 
+if (validRows.length === 0) {
+  const diagnosticSql = `-- =========================================================
+-- AUTO-GENERATED PILOT SEED
+-- Source: school_matrix_template.csv
+-- Generated: ${new Date().toISOString()}
+-- =========================================================
+
+-- No executable seed was generated because every row still contains
+-- placeholders or fake test data. Complete and validate the matrix first.
+SELECT 'NO_PRODUCTION_READY_SCHOOLS' AS seed_status;
+`;
+
+  fs.mkdirSync(outputDir, { recursive: true });
+  fs.writeFileSync(outputPath, diagnosticSql, "utf8");
+  console.log(`Generated diagnostic seed SQL: ${outputPath}`);
+  console.warn(`Skipped rows still containing placeholders: ${skipped.map((row) => row.school_code || row.app_variant).join(", ")}`);
+  process.exit(0);
+}
+
 const sql = `-- =========================================================
 -- AUTO-GENERATED PILOT SEED
 -- Source: school_matrix_template.csv
@@ -79,11 +98,10 @@ INSERT INTO public.schools (
   id,
   name,
   ci3_url,
-  ci3_token,
   parents_api_url,
-  parents_api_token,
   messages_api_url,
-  messages_api_token,
+  parents_api_secret_name,
+  messages_api_secret_name,
   is_active,
   server_node_id,
   wa_session_status,
@@ -96,11 +114,10 @@ ON CONFLICT (id) DO UPDATE
 SET
   name = EXCLUDED.name,
   ci3_url = EXCLUDED.ci3_url,
-  ci3_token = EXCLUDED.ci3_token,
   parents_api_url = EXCLUDED.parents_api_url,
-  parents_api_token = EXCLUDED.parents_api_token,
   messages_api_url = EXCLUDED.messages_api_url,
-  messages_api_token = EXCLUDED.messages_api_token,
+  parents_api_secret_name = EXCLUDED.parents_api_secret_name,
+  messages_api_secret_name = EXCLUDED.messages_api_secret_name,
   is_active = EXCLUDED.is_active,
   server_node_id = EXCLUDED.server_node_id,
   wa_session_status = EXCLUDED.wa_session_status,
@@ -118,7 +135,9 @@ VALUES
 ${parentValues.join(",\n")}
 ON CONFLICT DO NOTHING;
 
-SELECT id, name, parents_api_url, messages_api_url, server_node_id, wa_session_status
+SELECT id, name, parents_api_url, messages_api_url,
+       parents_api_secret_name, messages_api_secret_name,
+       server_node_id, wa_session_status
 FROM public.schools
 WHERE id IN (${validRows.map((row) => Number(row.school_id)).join(", ")})
 ORDER BY id;

@@ -458,14 +458,17 @@ function renderDashboardPage() {
 </html>`;
 }
 
-async function logOtp(item, school, status, message, errorMessage = null) {
+async function logOtp(item, status, errorMessage = null) {
     try {
+        const eventMessage = status === 'SENT'
+            ? 'OTP delivered through WhatsApp.'
+            : 'OTP delivery failed.';
         await supabase.from('otp_logs').insert({
             school_id: item.school_id,
             phone: item.phone,
             status,
             provider: 'whatsapp',
-            message,
+            message: eventMessage,
             error_message: errorMessage,
             sent_at: status === 'SENT' ? new Date().toISOString() : null,
         });
@@ -687,7 +690,7 @@ async function claimQueueItem(item) {
     return data;
 }
 
-async function markQueueSent(item, message) {
+async function markQueueSent(item) {
     const now = new Date().toISOString();
     await supabase
         .from('otp_queue')
@@ -709,10 +712,10 @@ async function markQueueSent(item, message) {
         otp_pause_until: null,
     });
 
-    await logOtp(item, null, 'SENT', message);
+    await logOtp(item, 'SENT');
 }
 
-async function markQueueFailed(item, message, errorMessage) {
+async function markQueueFailed(item, errorMessage) {
     const schoolId = String(item.school_id || '');
     let nextFailureCount = Number(item.school_failures || 0) + 1;
 
@@ -738,7 +741,7 @@ async function markQueueFailed(item, message, errorMessage) {
     }
 
     await updateSchoolOtpState(schoolId, schoolPatch);
-    await logOtp(item, null, 'FAILED', message, errorMessage);
+    await logOtp(item, 'FAILED', errorMessage);
 }
 
 async function processQueue() {
@@ -803,7 +806,6 @@ async function processQueue() {
             if (Number(claimedItem.attempt_count || 0) > MAX_ATTEMPTS) {
                 await markQueueFailed(
                     { ...claimedItem, school_failures: school.otp_consecutive_failures },
-                    '',
                     'OTP max retry limit reached.'
                 );
                 continue;
@@ -815,12 +817,11 @@ async function processQueue() {
             try {
                 await client.sendMessage(whatsappNumber, message);
                 console.log(`[WA ${schoolId}] OTP sent to ${claimedItem.phone}`);
-                await markQueueSent(claimedItem, message);
+                await markQueueSent(claimedItem);
             } catch (error) {
                 console.error(`[WA ${schoolId}] Send failed for ${claimedItem.phone}:`, error.message);
                 await markQueueFailed(
                     { ...claimedItem, school_failures: school.otp_consecutive_failures },
-                    message,
                     error.message
                 );
             }

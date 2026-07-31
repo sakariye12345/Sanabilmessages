@@ -3,11 +3,12 @@ import { View, Text, TextInput, Pressable, StyleSheet, Alert } from "react-nativ
 import { useRouter } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
 import { normalizeSomaliPhone, toE164SomaliPhone } from "../../src/utils/phone";
+import { getEdgeFunctionErrorMessage } from "../../src/utils/functionError";
 import { SchoolConfig } from "../../src/config/schoolConfig";
 
 type RequestOtpResponse = {
   success?: boolean;
-  status?: "queued" | "existing_active" | "paused";
+  status?: "queued" | "existing_active" | "paused" | "rate_limited" | "daily_cap_reached";
   queued?: boolean;
   reused?: boolean;
   provider?: string;
@@ -45,12 +46,17 @@ export default function PhoneScreen() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(await getEdgeFunctionErrorMessage(
+          error,
+          "OTP lama codsan karin. Fadlan wax yar kadib isku day."
+        ));
+      }
       if (!data?.success && data?.paused) {
         throw new Error(data.message || "OTP service-ku si ku meel gaar ah ayuu u hakad galay.");
       }
-      if (!data?.success && data?.error) {
-        throw new Error(data.error);
+      if (!data?.success) {
+        throw new Error(data?.message || data?.error || "OTP lama codsan karin.");
       }
 
       console.log("OTP Requested:", data);

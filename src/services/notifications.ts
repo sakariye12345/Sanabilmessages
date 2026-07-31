@@ -51,8 +51,14 @@ export async function registerForPushNotificationsAsync(options: PushTokenRegist
         }
 
         try {
+            const projectId =
+                Constants.expoConfig?.extra?.eas?.projectId ??
+                Constants.easConfig?.projectId;
+            if (!projectId) {
+                throw new Error('EAS project ID is not configured for this app variant.');
+            }
             token = (await Notifications.getExpoPushTokenAsync({
-                projectId: Constants.expoConfig?.extra?.eas?.projectId,
+                projectId,
             })).data;
             console.log('[Notifications] Push token registered.');
         } catch (e) {

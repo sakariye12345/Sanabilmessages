@@ -58,8 +58,11 @@ async function probeSupabase() {
   }
 
   try {
-    const response = await fetch(`${url}/rest/v1/schools?select=id&limit=1`, {
-      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    const headers = { apikey: key, Authorization: `Bearer ${key}` };
+    // The OpenAPI root may be service-role-only. A zero-row table request
+    // validates the anon key and PostgREST availability without reading data.
+    const response = await fetch(`${url}/rest/v1/allowed_parents?select=id&limit=0`, {
+      headers,
     });
     if (!response.ok) {
       const body = await response.text();
@@ -68,6 +71,37 @@ async function probeSupabase() {
       return;
     }
     console.log(`Supabase REST passed: HTTP ${response.status}`);
+
+    const sensitiveProbes = [
+      ["schools credentials", "schools?select=id,ci3_token,parents_api_token,messages_api_token&limit=1"],
+      ["OTP queue", "otp_queue?select=id,code&limit=1"],
+      ["OTP logs", "otp_logs?select=id,message&limit=1"],
+    ];
+
+    for (const [label, path] of sensitiveProbes) {
+      const probe = await fetch(`${url}/rest/v1/${path}`, {
+        headers,
+      });
+
+      if (probe.status === 401 || probe.status === 403) {
+        console.log(`Sensitive REST probe blocked: ${label} (HTTP ${probe.status})`);
+        continue;
+      }
+
+      if (!probe.ok) {
+        console.error(`Sensitive REST probe failed unexpectedly: ${label} (HTTP ${probe.status})`);
+        failures.push("Supabase REST security");
+        continue;
+      }
+
+      const rows = await probe.json();
+      if (!Array.isArray(rows) || rows.length !== 0) {
+        console.error(`Sensitive REST data is exposed to anon: ${label}`);
+        failures.push("Supabase REST security");
+      } else {
+        console.log(`Sensitive REST probe returned no rows: ${label}`);
+      }
+    }
   } catch (error) {
     console.error(`Supabase REST failed: ${error.message}`);
     failures.push("Live Supabase REST");

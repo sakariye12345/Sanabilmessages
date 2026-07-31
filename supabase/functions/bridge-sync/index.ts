@@ -9,6 +9,9 @@ import { isAuthorizedInternalRequest } from '../_shared/internal.ts'
 // Environment variables for Supabase (Service Role is required for RLS bypass)
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const EXPO_PUSH_API = 'https://exp.host/--/api/v2/push/send'
+const EXPO_RECEIPTS_API = 'https://exp.host/--/api/v2/push/getReceipts'
+const EXPO_ACCESS_TOKEN = Deno.env.get('EXPO_ACCESS_TOKEN') || ''
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
@@ -21,7 +24,7 @@ interface School {
     id: number
     name: string
     ci3_url: string
-    ci3_token: string
+    ci3_token?: string | null
     messages_api_url?: string | null
     messages_api_token?: string | null
 }
@@ -63,14 +66,13 @@ Deno.serve(async (req) => {
             schools_processed: 0,
             downstream: 0,
             upstream: 0,
+            push_receipts_checked: 0,
             errors: [] as string[]
         }
 
         // 1. Fetch Active Schools
         const { data: schools, error: schoolError } = await supabase
-            .from('schools')
-            .select('*')
-            .eq('is_active', true)
+            .rpc('get_active_school_integrations')
 
         if (schoolError || !schools) {
             throw new Error(`Failed to fetch schools: ${schoolError?.message}`)
@@ -108,6 +110,12 @@ Deno.serve(async (req) => {
             }
         }
 
+        try {
+            results.push_receipts_checked = await processPushReceipts()
+        } catch (error: any) {
+            results.errors.push(`Push receipt processing failed: ${error.message}`)
+        }
+
         return new Response(
             JSON.stringify(results),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
@@ -133,7 +141,7 @@ async function fetchWithRetry(url: string, options: any, retries = 3, backoff = 
             if (!res.ok) {
                 // If 5xx error, throw to retry. If 4xx (client error), maybe don't retry?
                 // For now, retry all non-200 to be safe against flakes.
-                if (res.status >= 500) throw new Error(`Status ${res.status}`)
+                if (res.status >= 500 || res.status === 429) throw new Error(`Status ${res.status}`)
                 return res // Return 4xx immediately (don't retry auth errors)
             }
             return res
@@ -397,10 +405,9 @@ async function sendPushNotification(
     schoolName: string,
 ) {
     try {
-        // 1. Fetch active push tokens for this phone number
         const { data: devices } = await supabase
             .from('user_devices')
-            .select('fcm_token')
+            .select('id, fcm_token')
             .eq('school_id', schoolId)
             .eq('phone_number', phone)
             .eq('is_active', true)
@@ -408,57 +415,179 @@ async function sendPushNotification(
 
         if (!devices || devices.length === 0) return;
 
-        // 2. Prepare Expo Push API payload
-        const messages = [];
+        const deliveries = [];
         for (const device of devices) {
             if (
                 !device.fcm_token ||
                 !/^(ExponentPushToken|ExpoPushToken)\[.+\]$/.test(device.fcm_token)
             ) continue;
-            // Truncate body if very long
+
             const shortBody = body.length > 150 ? body.substring(0, 147) + '...' : body;
 
-            messages.push({
-                to: device.fcm_token,
-                sound: 'default',
-                title: `${schoolName}: ${title}`,
-                body: shortBody,
-                data: {
-                    message_id: messageId,
-                    school_id: schoolId,
-                    type: 'new_message',
+            deliveries.push({
+                userDeviceId: device.id,
+                payload: {
+                    to: device.fcm_token,
+                    sound: 'default',
+                    title: `${schoolName}: ${title}`,
+                    body: shortBody,
+                    data: {
+                        message_id: messageId,
+                        school_id: schoolId,
+                        type: 'new_message',
+                    },
                 },
             });
         }
 
-        if (messages.length === 0) return;
+        if (deliveries.length === 0) return;
 
-        // 3. Send out via Expo HTTP HTTP/2 API
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), 15_000)
-        let response: Response
+        for (let offset = 0; offset < deliveries.length; offset += 100) {
+            const batch = deliveries.slice(offset, offset + 100)
+            const headers: Record<string, string> = {
+                Accept: 'application/json',
+                'Accept-encoding': 'gzip, deflate',
+                'Content-Type': 'application/json',
+            }
+            if (EXPO_ACCESS_TOKEN) {
+                headers.Authorization = `Bearer ${EXPO_ACCESS_TOKEN}`
+            }
 
-        try {
-            response = await fetch('https://exp.host/--/api/v2/push/send', {
+            const response = await fetchWithRetry(EXPO_PUSH_API, {
                 method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'Accept-encoding': 'gzip, deflate',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(messages),
-                signal: controller.signal,
-            });
-        } finally {
-            clearTimeout(timeout)
+                headers,
+                body: JSON.stringify(batch.map((delivery) => delivery.payload)),
+            }, 3, 1000)
+
+            if (!response.ok) {
+                console.error(`Expo Push API failed with status ${response.status}`);
+                continue
+            }
+
+            const responseBody = await response.json()
+            const tickets = Array.isArray(responseBody?.data) ? responseBody.data : []
+
+            for (let index = 0; index < batch.length; index += 1) {
+                const delivery = batch[index]
+                const ticket = tickets[index]
+
+                if (ticket?.status === 'ok' && ticket.id) {
+                    const { error: ticketError } = await supabase
+                        .from('push_delivery_tickets')
+                        .upsert({
+                            expo_ticket_id: ticket.id,
+                            school_id: schoolId,
+                            message_id: messageId,
+                            user_device_id: delivery.userDeviceId,
+                            status: 'PENDING',
+                            updated_at: new Date().toISOString(),
+                        }, { onConflict: 'expo_ticket_id' })
+
+                    if (ticketError) {
+                        console.error('[Notification] Ticket persistence failed:', ticketError.message)
+                    }
+                    continue
+                }
+
+                const errorCode = ticket?.details?.error || 'ExpoTicketError'
+                console.error(`[Notification] Push ticket failed: ${errorCode}`)
+                if (errorCode === 'DeviceNotRegistered') {
+                    await clearInvalidPushToken(delivery.userDeviceId)
+                }
+            }
         }
 
-        if (!response.ok) {
-            console.error(`Expo Push API failed with status ${response.status}`);
-        } else {
-            console.log(`[Notification] Pushed ${messages.length} token(s) to ${phone}`);
-        }
+        console.log(`[Notification] Submitted ${deliveries.length} token(s) for ${phone}`);
     } catch (e: any) {
         console.error(`[Notification] Push API Exception: ${e.message}`);
     }
+}
+
+async function clearInvalidPushToken(userDeviceId: number) {
+    const { error } = await supabase
+        .from('user_devices')
+        .update({ fcm_token: null, updated_at: new Date().toISOString() })
+        .eq('id', userDeviceId)
+
+    if (error) throw error
+}
+
+async function processPushReceipts() {
+    const now = new Date()
+    const receiptCutoff = new Date(now.getTime() - 15 * 60 * 1000).toISOString()
+    const receiptExpiry = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+
+    const { error: expiryError } = await supabase
+        .from('push_delivery_tickets')
+        .update({
+            status: 'FAILED',
+            error_code: 'ReceiptTimeout',
+            error_message: 'Expo receipt was not available within 24 hours.',
+            receipt_checked_at: now.toISOString(),
+            updated_at: now.toISOString(),
+        })
+        .eq('status', 'PENDING')
+        .lt('created_at', receiptExpiry)
+
+    if (expiryError) throw expiryError
+
+    const { data: pendingTickets, error } = await supabase
+        .from('push_delivery_tickets')
+        .select('id, expo_ticket_id, user_device_id')
+        .eq('status', 'PENDING')
+        .lte('created_at', receiptCutoff)
+        .order('created_at', { ascending: true })
+        .limit(1000)
+
+    if (error) throw error
+    if (!pendingTickets?.length) return 0
+
+    const headers: Record<string, string> = {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+    }
+    if (EXPO_ACCESS_TOKEN) {
+        headers.Authorization = `Bearer ${EXPO_ACCESS_TOKEN}`
+    }
+
+    const response = await fetchWithRetry(EXPO_RECEIPTS_API, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ ids: pendingTickets.map((ticket) => ticket.expo_ticket_id) }),
+    }, 3, 1000)
+
+    if (!response.ok) {
+        throw new Error(`Expo receipt API returned ${response.status}`)
+    }
+
+    const responseBody = await response.json()
+    const receipts = responseBody?.data || {}
+    let checked = 0
+
+    for (const ticket of pendingTickets) {
+        const receipt = receipts[ticket.expo_ticket_id]
+        if (!receipt) continue
+
+        const delivered = receipt.status === 'ok'
+        const errorCode = delivered ? null : receipt?.details?.error || 'ExpoReceiptError'
+        const { error: updateError } = await supabase
+            .from('push_delivery_tickets')
+            .update({
+                status: delivered ? 'DELIVERED' : 'FAILED',
+                error_code: errorCode,
+                error_message: delivered ? null : receipt?.message || 'Push delivery failed.',
+                receipt_checked_at: now.toISOString(),
+                updated_at: now.toISOString(),
+            })
+            .eq('id', ticket.id)
+            .eq('status', 'PENDING')
+
+        if (updateError) throw updateError
+        if (errorCode === 'DeviceNotRegistered') {
+            await clearInvalidPushToken(ticket.user_device_id)
+        }
+        checked += 1
+    }
+
+    return checked
 }

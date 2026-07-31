@@ -3,13 +3,17 @@ import { View, Text, TextInput, Pressable, StyleSheet, Alert } from "react-nativ
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
 import { normalizeSomaliPhone } from "../../src/utils/phone";
-import { registerCurrentDeviceAfterLogin } from "../../src/services/deviceTrust";
+import {
+  getDeviceEnrollmentPayload,
+  registerCurrentDeviceAfterLogin,
+} from "../../src/services/deviceTrust";
 import { useAuthStore } from "../../src/store/auth";
 import { SchoolConfig } from "../../src/config/schoolConfig";
+import { getEdgeFunctionErrorMessage } from "../../src/utils/functionError";
 
 type RequestOtpResponse = {
   success?: boolean;
-  status?: "queued" | "existing_active" | "paused";
+  status?: "queued" | "existing_active" | "paused" | "rate_limited" | "daily_cap_reached";
   queued?: boolean;
   reused?: boolean;
   provider?: string;
@@ -84,16 +88,23 @@ export default function VerifyScreen() {
     try {
       const requestPhone = normalizeSomaliPhone(phone || "");
       if (!requestPhone) throw new Error("Lambarka telefoonka sax ma aha.");
+      const device = await getDeviceEnrollmentPayload();
 
       const { data: verifyData, error: verifyError } = await supabase.functions.invoke<VerifyOtpResponse>("verify-otp", {
         body: {
           phone: requestPhone,
           code: c,
           school_id: SchoolConfig.SCHOOL_ID,
+          ...device,
         },
       });
 
-      if (verifyError) throw verifyError;
+      if (verifyError) {
+        throw new Error(await getEdgeFunctionErrorMessage(
+          verifyError,
+          "OTP verification-ku ma guulaysan. Fadlan mar kale isku day."
+        ));
+      }
       if (
         !verifyData?.success ||
         !verifyData.phone ||
@@ -108,14 +119,15 @@ export default function VerifyScreen() {
         refresh_token: verifyData.session.refresh_token,
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(await getEdgeFunctionErrorMessage(
+          error,
+          "OTP lama codsan karin. Fadlan wax yar kadib isku day."
+        ));
+      }
       if (!data.session) throw new Error("No session created.");
 
-      try {
-        await registerCurrentDeviceAfterLogin(verifyData.phone);
-      } catch (registrationError: any) {
-        console.warn("Trusted device registration failed:", registrationError?.message || registrationError);
-      }
+      await registerCurrentDeviceAfterLogin(verifyData.phone);
 
       const synced = await useAuthStore.getState().syncActiveSession();
       if (!synced) {
@@ -150,8 +162,8 @@ export default function VerifyScreen() {
       if (!data?.success && data?.paused) {
         throw new Error(data.message || "OTP service-ku si ku meel gaar ah ayuu u hakad galay.");
       }
-      if (!data?.success && data?.error) {
-        throw new Error(data.error);
+      if (!data?.success) {
+        throw new Error(data?.message || data?.error || "OTP lama codsan karin.");
       }
 
       const nextCooldown = Number(data?.cooldown_seconds ?? 30);

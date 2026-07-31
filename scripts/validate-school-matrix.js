@@ -65,7 +65,9 @@ for (const row of matrix) {
     "support_phone",
     "website",
     "parents_api_url",
+    "parents_api_secret_name",
     "messages_api_url",
+    "messages_api_secret_name",
     "otp_server_node_id",
   ]) {
     if (isPlaceholder(row[required])) {
@@ -78,6 +80,13 @@ for (const row of matrix) {
     if (!isValidHttpsUrl(row[urlField])) {
       const target = productionMode ? errors : warnings;
       target.push(`${label}: ${urlField} must be a real HTTPS URL`);
+    }
+  }
+
+  for (const secretField of ["parents_api_secret_name", "messages_api_secret_name"]) {
+    if (!/^[A-Za-z0-9_-]{3,120}$/.test(row[secretField] || "")) {
+      const target = productionMode ? errors : warnings;
+      target.push(`${label}: ${secretField} must be a Vault secret name, never a token value`);
     }
   }
 
