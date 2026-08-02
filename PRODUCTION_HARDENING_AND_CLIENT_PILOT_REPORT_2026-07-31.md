@@ -121,14 +121,16 @@ marka Supabase restriction-ka la saaro.
 Marka Gate A la dhammeeyo:
 
 ```powershell
-npm run preflight:production
-npx supabase db push --linked
-npx supabase functions deploy request-otp --project-ref fmmatzjhhyhtkpabyhih
-npx supabase functions deploy verify-otp --project-ref fmmatzjhhyhtkpabyhih
-npx supabase functions deploy bridge-sync --project-ref fmmatzjhhyhtkpabyhih
-npx supabase functions deploy sync-parents --project-ref fmmatzjhhyhtkpabyhih
-npx supabase functions deploy notify-parents --project-ref fmmatzjhhyhtkpabyhih
+npm run release:check
+npm run release:deploy -- --confirm-project=fmmatzjhhyhtkpabyhih
 ```
+
+`release:check` wax live ah ma beddelo. Wuxuu hubiyaa Git state, Auth/REST
+health, production school data, required Edge secret names, migration dry-run iyo
+code checks. `release:deploy` wuxuu migrations-ka marka hore push-gareeyaa,
+kadibna shanta Function ayuu mid mid ugu deploy-gareeyaa JWT policy-gooda saxda
+ah. Wrong-project confirmation, dirty Git ama upstream divergence deployment-ka
+way joojinayaan. Cron activation-ku si ula kac ah ayuu uga baxsan yahay script-ka.
 
 Edge Function secrets-ka cusub:
 

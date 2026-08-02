@@ -21,7 +21,9 @@
     "schools:rollout:generate": "node ./scripts/generate-live-rollout-pack.js",
     "secrets:scan": "node ./scripts/scan-secrets.js",
     "preflight:code": "node ./scripts/production-preflight.js --code-only",
-    "preflight:production": "node ./scripts/production-preflight.js"
+    "preflight:production": "node ./scripts/production-preflight.js",
+    "release:check": "node ./scripts/deploy-production.js",
+    "release:deploy": "node ./scripts/deploy-production.js --execute"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
