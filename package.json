@@ -23,7 +23,8 @@
     "preflight:code": "node ./scripts/production-preflight.js --code-only",
     "preflight:production": "node ./scripts/production-preflight.js",
     "release:check": "node ./scripts/deploy-production.js",
-    "release:deploy": "node ./scripts/deploy-production.js --execute"
+    "release:deploy": "node ./scripts/deploy-production.js --execute",
+    "smoke:production": "node ./scripts/post-deploy-smoke.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

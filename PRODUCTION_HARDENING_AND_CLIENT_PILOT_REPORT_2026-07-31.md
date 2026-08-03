@@ -130,7 +130,19 @@ health, production school data, required Edge secret names, migration dry-run iy
 code checks. `release:deploy` wuxuu migrations-ka marka hore push-gareeyaa,
 kadibna shanta Function ayuu mid mid ugu deploy-gareeyaa JWT policy-gooda saxda
 ah. Wrong-project confirmation, dirty Git ama upstream divergence deployment-ka
-way joojinayaan. Cron activation-ku si ula kac ah ayuu uga baxsan yahay script-ka.
+way joojinayaan. Deployment-ka kadib `smoke:production` ayaa si automatic ah u
+xaqiijiya migration alignment, Function status/JWT policy, Auth/REST health,
+server-only table isolation iyo internal endpoint authentication. Cron
+activation-ku si ula kac ah ayuu uga baxsan yahay script-ka.
+
+Smoke suite-ka gooni ahaan waxaa loo ordi karaa:
+
+```powershell
+npm run smoke:production
+```
+
+Automated smoke-ku wax OTP ama real message ah ma abuuro. Manual pilot test-ka
+WhatsApp OTP, CI3 message, Realtime iyo push notification wali waa gate gooni ah.
 
 Edge Function secrets-ka cusub:
 

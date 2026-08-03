@@ -184,10 +184,10 @@ async function main() {
 
   run(npx, ["supabase", "db", "push", "--linked", "--yes"]);
   deployFunctions(projectRef);
-  await probeSupabase(url, anonKey);
+  run(npm, ["run", "smoke:production"]);
 
   console.log("\n[release] DEPLOYMENT COMPLETED");
-  console.log("[release] Cron was not activated. Run the manual smoke test first.");
+  console.log("[release] Cron was not activated. Run the manual end-to-end pilot test first.");
 }
 
 main().catch((error) => {
