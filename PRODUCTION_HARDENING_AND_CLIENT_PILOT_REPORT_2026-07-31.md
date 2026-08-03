@@ -85,19 +85,32 @@ ula kac ah ayuu arrimahan u xannibayaa.
 | WhatsApp production dependency audit | PASS, 0 vulnerabilities |
 | Repository secret scan | PASS |
 | School/matrix/device structural validators | PASS |
-| Supabase migration dry-run | PASS, 3 migrations pending |
+| Supabase migration dry-run | PARTIAL: 3 hore PASS; retention migration remote check wuxuu sugayaa in 402 laga saaro |
 | Live Supabase Auth/REST | FAIL, HTTP 402 quota restriction |
 | Production manifest/matrix/device validators | FAIL as expected: real rollout data missing |
 
-Dry-run-ku wuxuu aqbalay migrations-kan:
+Remote dry-run-ku wuxuu hore u aqbalay saddexdan migration:
 
 1. `20260731100000_auth_device_and_otp_security.sql`
 2. `20260731101000_push_delivery_hardening.sql`
 3. `20260731102000_integration_vault_references.sql`
 
+Migration-kan afraad wuxuu gudbay local code/static checks, laakiin remote
+Postgres connection-ku 402/TLS timeout ayuu ku xanniban yahay, sidaas darteed
+wali remote dry-run PASS looma aqoonsan:
+
+4. `20260803120000_operational_data_retention.sql`
+
 Migrations-ka lama push-gareyn. Edge Functions-ka cusubna lama deploy-gareyn,
 sababtoo ah auth/device change-ku waa in atomic order lagu deploy-gareeyo kadib
 marka Supabase restriction-ka la saaro.
+
+Operational retention migration-ku wuxuu bounded batches ku nadiifiyaa oo keliya
+expired technical data: OTP queue/logs 30 maalmood, push receipts 30 maalmood,
+sync logs 90 maalmood iyo rate-limit hashes 24 saac. Parent records, schools,
+messages iyo recipients lama taabto. `bridge-sync` invocation kasta wuxuu
+nadiifiyaa ugu badnaan 5,000 row table kasta, si cleanup-ku uusan lock culus ama
+hal mar delete weyn u samayn.
 
 ## 4. Deployment Order-ka Saxda ah
 
@@ -233,7 +246,7 @@ Client pilot waa **GO** keliya marka dhammaan qodobadan ay sax yihiin:
 
 - `npm run preflight:production` wuxuu ku dhammaadaa PASS.
 - Supabase Auth iyo REST waxay bixiyaan 2xx, ma aha 402.
-- Saddexda pending migration live ayay ku jiraan.
+- Afarta pending migration live ayay ku jiraan.
 - Shanta Edge Function version-kooda cusub waa ACTIVE.
 - Real school matrix, device matrix iyo manifest dhammaantood PASS.
 - WhatsApp sessions-ka pilot schools waa CONNECTED.

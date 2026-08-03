@@ -67,7 +67,14 @@ Deno.serve(async (req) => {
             downstream: 0,
             upstream: 0,
             push_receipts_checked: 0,
+            retention_rows_deleted: 0,
             errors: [] as string[]
+        }
+
+        try {
+            results.retention_rows_deleted = await purgeOperationalData()
+        } catch (error: any) {
+            results.errors.push(`Operational retention failed: ${error.message}`)
         }
 
         // 1. Fetch Active Schools
@@ -590,4 +597,35 @@ async function processPushReceipts() {
     }
 
     return checked
+}
+
+async function purgeOperationalData() {
+    const { data, error } = await supabase
+        .rpc('purge_operational_data', {
+            p_batch_size: 5000,
+            p_otp_retention_days: 30,
+            p_push_retention_days: 30,
+            p_sync_retention_days: 90,
+        })
+        .single()
+
+    if (error) throw error
+
+    const counts = data as {
+        otp_queue_deleted?: number | string
+        otp_logs_deleted?: number | string
+        otp_attempts_deleted?: number | string
+        push_tickets_deleted?: number | string
+        sync_logs_deleted?: number | string
+    } | null
+
+    const rawCounts: Array<number | string | undefined> = [
+        counts?.otp_queue_deleted,
+        counts?.otp_logs_deleted,
+        counts?.otp_attempts_deleted,
+        counts?.push_tickets_deleted,
+        counts?.sync_logs_deleted,
+    ]
+
+    return rawCounts.reduce<number>((total, count) => total + Number(count || 0), 0)
 }
