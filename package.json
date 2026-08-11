@@ -7,6 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "eas:cli": "npm exec --yes --package=eas-cli@21.7.1 -- eas",
+    "eas:env:validate": "node ./scripts/validate-eas-environment.js",
     "typecheck": "tsc --noEmit",
     "schools:validate": "node ./scripts/validate-school-manifest.js",
     "schools:validate:production": "node ./scripts/validate-school-manifest.js --production",

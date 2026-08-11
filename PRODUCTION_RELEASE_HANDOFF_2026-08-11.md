@@ -32,6 +32,7 @@ Kuwaan dhammaantood way gudbeen:
 - Device matrix structural validation: PASS
 - Expo/EAS build contract, dhammaan 6 variants: PASS
 - Sanabil selected production build contract: PASS
+- Sanabil EAS project linkage iyo `preview`/`production` cloud variables: PASS
 - WhatsApp service syntax: PASS
 - WhatsApp production dependency audit: `0 vulnerabilities`
 - Deno checks ee 5 Edge Functions: PASS
@@ -135,17 +136,12 @@ EAS project kasta ku xaqiiji labada public mobile variables ee `preview` iyo `pr
 Hubinta Sanabil preview:
 
 ```powershell
-$env:APP_VARIANT="sanabil"
-npx eas-cli env:list --environment preview
+npm run eas:env:validate -- --variant=sanabil
 ```
 
-Hubinta production:
+Command-kan wuxuu project linkage-ka iyo labada environment ee `preview` iyo `production` wada hubiyaa, laakiin values ma daabaco.
 
-```powershell
-npx eas-cli env:list --environment production
-```
-
-Local `.env` kuma filna EAS cloud build. EAS dashboard ama authenticated EAS CLI ayaa lagu maamulaa values-ka.
+Local `.env` kuma filna EAS cloud build. EAS dashboard ama authenticated pinned EAS CLI ayaa lagu maamulaa values-ka.
 
 ## 7. Deployment Marka 402 Baxo
 
@@ -178,13 +174,13 @@ Cron si automatic ah uma shidmo. Taasi waa safety gate sax ah.
 Internal APK pilot:
 
 ```powershell
-npx eas-cli build --platform android --profile sanabil
+npm run eas:cli -- build --platform android --profile sanabil
 ```
 
 Play Store AAB:
 
 ```powershell
-npx eas-cli build --platform android --profile production-sanabil
+npm run eas:cli -- build --platform android --profile production-sanabil
 ```
 
 ## 8. Client Pilot Acceptance Test
@@ -210,7 +206,7 @@ School kasta ku celi:
 
 **Live Supabase deployment:** NO-GO ilaa 402 laga qaado
 
-**Sanabil client pilot:** NO-GO ilaa real local matrices, EAS environments, deployment iyo acceptance test ay gudbaan
+**Sanabil client pilot:** NO-GO ilaa real local matrices, deployment iyo acceptance test ay gudbaan
 
 **Multi-school architecture:** GO marka school kasta uu leeyahay unique `school_id`, app variant, EAS project, CI3 endpoints, WhatsApp session iyo local test device
 

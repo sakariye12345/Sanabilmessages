@@ -22,7 +22,7 @@ Use it during the live multi-school pilot.
 
 ### Build
 ```powershell
-npx eas-cli build --platform android --profile sanabil
+npm run eas:cli -- build --platform android --profile sanabil
 ```
 
 ### Install Checklist
@@ -54,7 +54,7 @@ npx eas-cli build --platform android --profile sanabil
 
 ### Build
 ```powershell
-npx eas-cli build --platform android --profile schoolb
+npm run eas:cli -- build --platform android --profile schoolb
 ```
 
 ### Install Checklist
@@ -86,7 +86,7 @@ npx eas-cli build --platform android --profile schoolb
 
 ### Build
 ```powershell
-npx eas-cli build --platform android --profile schoolc
+npm run eas:cli -- build --platform android --profile schoolc
 ```
 
 ### Install Checklist
@@ -118,7 +118,7 @@ npx eas-cli build --platform android --profile schoolc
 
 ### Build
 ```powershell
-npx eas-cli build --platform android --profile schoold
+npm run eas:cli -- build --platform android --profile schoold
 ```
 
 ### Install Checklist

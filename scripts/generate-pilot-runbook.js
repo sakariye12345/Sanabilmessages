@@ -61,7 +61,7 @@ const sections = devices.map((device) => {
 
 ### Build
 \`\`\`powershell
-npx eas-cli build --platform android --profile ${device.app_variant}
+npm run eas:cli -- build --platform android --profile ${device.app_variant}
 \`\`\`
 
 ### Install Checklist

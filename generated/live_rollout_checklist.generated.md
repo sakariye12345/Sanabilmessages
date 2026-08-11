@@ -55,7 +55,7 @@ Before executing the seed:
 
 ### Build Command
 ```powershell
-npx eas-cli build --platform android --profile sanabil
+npm run eas:cli -- build --platform android --profile sanabil
 ```
 
 ### OTP Session Activation
@@ -94,7 +94,7 @@ npx eas-cli build --platform android --profile sanabil
 
 ### Build Command
 ```powershell
-npx eas-cli build --platform android --profile schoolb
+npm run eas:cli -- build --platform android --profile schoolb
 ```
 
 ### OTP Session Activation
@@ -133,7 +133,7 @@ npx eas-cli build --platform android --profile schoolb
 
 ### Build Command
 ```powershell
-npx eas-cli build --platform android --profile schoolc
+npm run eas:cli -- build --platform android --profile schoolc
 ```
 
 ### OTP Session Activation
@@ -172,7 +172,7 @@ npx eas-cli build --platform android --profile schoolc
 
 ### Build Command
 ```powershell
-npx eas-cli build --platform android --profile schoold
+npm run eas:cli -- build --platform android --profile schoold
 ```
 
 ### OTP Session Activation

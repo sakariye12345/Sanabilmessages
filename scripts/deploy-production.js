@@ -126,6 +126,16 @@ async function validateSecrets(projectRef) {
   console.log(`[release] Required Edge secrets: ${requiredSecrets.length}/${requiredSecrets.length}`);
 }
 
+async function validateEasEnvironments(variants) {
+  for (const variant of variants.split(",").map((value) => value.trim()).filter(Boolean)) {
+    await run(
+      process.execPath,
+      ["./scripts/validate-eas-environment.js", `--variant=${variant}`],
+      { timeoutMs: 300_000 }
+    );
+  }
+}
+
 async function deployFunctions(projectRef) {
   for (const deployment of functionDeployments) {
     const args = [
@@ -177,6 +187,7 @@ async function main() {
   console.log(`[release] Variants: ${variants || "ALL"}`);
   await assertCleanReleaseState();
 
+  if (variants) await validateEasEnvironments(variants);
   await validateSecrets(projectRef);
   await probeSupabase(url, anonKey);
   const preflightArgs = ["run", "preflight:production", "--", "--skip-export"];

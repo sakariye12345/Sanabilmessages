@@ -69,7 +69,7 @@ ${device ? `- Device: \`${device.device_label}\`` : "- Device: `UNASSIGNED`"}
 
 ### Build Command
 \`\`\`powershell
-npx eas-cli build --platform android --profile ${school.app_variant}
+npm run eas:cli -- build --platform android --profile ${school.app_variant}
 \`\`\`
 
 ### OTP Session Activation
