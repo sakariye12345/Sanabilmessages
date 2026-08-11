@@ -2,17 +2,38 @@ const path = require("path");
 const fs = require("fs");
 const {
   readSchoolMatrix,
+  filterSelectedVariants,
   isPlaceholder,
   isValidHttpsUrl,
+  resolveInputPath,
+  selectedVariants,
 } = require("./school-matrix-utils");
 
 const root = path.resolve(__dirname, "..");
-const matrixPath = path.join(root, "school_matrix_template.csv");
+const matrixPath = resolveInputPath(
+  root,
+  "school-matrix",
+  "SCHOOL_MATRIX_PATH",
+  "school_matrix_template.csv"
+);
 const manifestPath = path.join(root, "config", "schools.manifest.json");
 const productionMode = process.argv.includes("--production");
 
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-const matrix = readSchoolMatrix(matrixPath);
+const selected = selectedVariants();
+let matrix;
+
+try {
+  matrix = filterSelectedVariants(
+    readSchoolMatrix(matrixPath),
+    (row) => row.app_variant,
+    selected,
+    "School matrix"
+  );
+} catch (error) {
+  console.error(`ERROR: ${error.message}`);
+  process.exit(1);
+}
 
 const seenSchoolIds = new Set();
 const seenVariants = new Set();

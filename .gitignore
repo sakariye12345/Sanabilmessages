@@ -35,6 +35,11 @@ yarn-error.*
 .env.development
 *.pem
 
+# Real pilot data contains parent phone numbers and must stay local
+school_matrix.production.csv
+pilot_device_test_matrix.production.csv
+generated/*.production.*
+
 # Local automation/session state
 whatsapp_session/
 .wwebjs_auth/

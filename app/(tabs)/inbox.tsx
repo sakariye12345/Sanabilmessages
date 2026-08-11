@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, Text, StyleSheet, FlatList, Pressable, TextInput, RefreshControl } from "react-native";
+import { ActivityIndicator, View, Text, StyleSheet, FlatList, Pressable, TextInput, RefreshControl } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "../../src/store/auth";
@@ -19,28 +19,18 @@ export default function InboxScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
-  useFocusEffect(
-    useCallback(() => {
-      refetch();
-    }, [])
-  );
-
-  const { data: messages, isLoading, refetch } = useQuery({
+  const { data: messages, error: inboxError, isError, isFetching, isLoading, refetch } = useQuery({
     queryKey: ["inbox_broadcasts", SchoolConfig.SCHOOL_ID, user?.phone],
     queryFn: async (): Promise<any[]> => {
-      try {
-        if (!user?.phone) {
-          console.log("Inbox: No user phone found");
-          return [];
-        }
+      if (!user?.phone) return [];
 
-        const { data: rawData, error: rawError } = await supabase.rpc("get_my_inbox", {
-          p_school_id: SchoolConfig.SCHOOL_ID,
-        });
+      const { data: rawData, error: rawError } = await supabase.rpc("get_my_inbox", {
+        p_school_id: SchoolConfig.SCHOOL_ID,
+      });
 
-        if (rawError) {
-          console.log("Inbox raw RPC Error:", rawError);
-        } else if (rawData && rawData.length > 0) {
+      if (rawError) {
+        console.warn("Inbox delivery status RPC failed:", rawError.message);
+      } else if (rawData && rawData.length > 0) {
           const pendingIds = rawData
             .filter((m: any) => m.status === "pending")
             .map((m: any) => m.id);
@@ -59,31 +49,30 @@ export default function InboxScreen() {
           }
         }
 
-        const { data: summaryData, error: summaryError } = await supabase.rpc("get_inbox_summary", {
-          p_school_id: SchoolConfig.SCHOOL_ID,
-        });
+      const { data: summaryData, error: summaryError } = await supabase.rpc("get_inbox_summary", {
+        p_school_id: SchoolConfig.SCHOOL_ID,
+      });
 
-        if (summaryError) {
-          console.log("Summary RPC Error:", summaryError);
-          throw summaryError;
-        }
+      if (summaryError) throw summaryError;
 
-        return (summaryData || []).map((row: any) => ({
-          id: row.group_type,
-          phone: row.school_name || SchoolConfig.APP_NAME,
-          display_name: row.group_type,
-          last_message: row.last_message,
-          last_message_at: row.last_at,
-          unread_count: Number(row.unread_count),
-          is_broadcast: true,
-          row_type: row.group_type,
-        }));
-      } catch (e) {
-        console.log("Fetch error details:", e);
-        return [];
-      }
+      return (summaryData || []).map((row: any) => ({
+        id: row.group_type,
+        phone: row.school_name || SchoolConfig.APP_NAME,
+        display_name: row.group_type,
+        last_message: row.last_message,
+        last_message_at: row.last_at,
+        unread_count: Number(row.unread_count),
+        is_broadcast: true,
+        row_type: row.group_type,
+      }));
     },
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetch();
+    }, [refetch])
+  );
 
   React.useEffect(() => {
     if (!user?.phone) return;
@@ -199,7 +188,7 @@ export default function InboxScreen() {
         data={filteredConversations}
         keyExtractor={(item: any) => item.id}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} colors={[Colors.primary]} />
+          <RefreshControl refreshing={isFetching && !isLoading} onRefresh={refetch} colors={[Colors.primary]} />
         }
         renderItem={({ item }) => (
           <ConversationRow
@@ -209,9 +198,25 @@ export default function InboxScreen() {
         )}
         contentContainerStyle={{ paddingBottom: 100, paddingTop: 8 }}
         ListEmptyComponent={
-          <View style={s.center}>
-            <Text style={{ opacity: 0.5 }}>No conversations</Text>
-          </View>
+          isLoading ? (
+            <View style={s.center}>
+              <ActivityIndicator color={Colors.primary} />
+            </View>
+          ) : isError ? (
+            <View style={s.errorCard}>
+              <Text style={s.errorTitle}>Fariimaha lama soo qaadi karin</Text>
+              <Text style={s.errorText}>
+                {inboxError instanceof Error ? inboxError.message : "Fadlan internetka hubi oo mar kale isku day."}
+              </Text>
+              <Pressable style={s.retryButton} onPress={() => void refetch()}>
+                <Text style={s.retryText}>Mar kale isku day</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={s.center}>
+              <Text style={{ opacity: 0.5 }}>Wali fariimo ma jiraan</Text>
+            </View>
+          )
         }
       />
     </View>
@@ -229,6 +234,17 @@ const s = StyleSheet.create({
     alignItems: "center",
     marginTop: 50,
   },
+  errorCard: {
+    margin: 20,
+    padding: 18,
+    borderRadius: 14,
+    backgroundColor: "#fff3f2",
+    alignItems: "center",
+  },
+  errorTitle: { color: Colors.error, fontSize: 17, fontWeight: "700", textAlign: "center" },
+  errorText: { color: Colors.textSecondary, marginTop: 8, textAlign: "center", lineHeight: 20 },
+  retryButton: { backgroundColor: Colors.primary, marginTop: 14, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 10 },
+  retryText: { color: Colors.onPrimary, fontWeight: "700" },
   headerContainer: {
     paddingTop: 12,
     paddingHorizontal: 16,

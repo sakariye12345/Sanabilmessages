@@ -1,6 +1,11 @@
 const fs = require("fs");
 const path = require("path");
-const { isPlaceholder, isValidHttpsUrl } = require("./school-matrix-utils");
+const {
+  filterSelectedVariants,
+  isPlaceholder,
+  isValidHttpsUrl,
+  selectedVariants,
+} = require("./school-matrix-utils");
 
 const root = path.resolve(__dirname, "..");
 const manifestPath = path.join(root, "config", "schools.manifest.json");
@@ -31,7 +36,20 @@ function checkAsset(assetPath, fallbackAllowed = true) {
 
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 const schools = manifest.schools || {};
-const variants = Object.entries(schools);
+const selected = selectedVariants();
+let variants;
+
+try {
+  variants = filterSelectedVariants(
+    Object.entries(schools),
+    ([variant]) => variant,
+    selected,
+    "School manifest"
+  );
+} catch (error) {
+  fail(error.message);
+  process.exit(1);
+}
 
 if (!variants.length) {
   fail("No school variants were found in config/schools.manifest.json");

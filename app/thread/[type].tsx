@@ -24,6 +24,7 @@ export default function ThreadScreen() {
     const router = useRouter();
     const [messages, setMessages] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const listRef = useRef<FlatList>(null);
     const [fontScale, setFontScale] = useState(1);
     const savedScale = useRef(1);
@@ -89,9 +90,13 @@ export default function ThreadScreen() {
     }, [user, type]); // Depend on user and type to re-subscribe if they change
 
     const fetchMessages = async () => {
-        if (!user?.phone) return;
+        if (!user?.phone) {
+            setLoading(false);
+            return;
+        }
 
         try {
+            setLoadError(null);
             // Ensure phone has + prefix for DB matching if needed, 
             // but usually auth store has it correct.
             // Ensure phone matches Auth format (252...)
@@ -162,6 +167,7 @@ export default function ThreadScreen() {
             }
         } catch (err) {
             console.error(err);
+            setLoadError(err instanceof Error ? err.message : 'Fariimaha lama soo qaadi karin.');
         } finally {
             setLoading(false);
         }
@@ -229,21 +235,39 @@ export default function ThreadScreen() {
                 <Stack.Screen options={{ title: titleMap[type || ''] || 'Messages' }} />
                 {loading ? (
                     <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 50 }} />
+                ) : loadError && messages.length === 0 ? (
+                    <View style={s.errorCard}>
+                        <Text style={s.errorTitle}>Fariimaha lama soo qaadi karin</Text>
+                        <Text style={s.errorText}>{loadError}</Text>
+                        <Pressable style={s.retryButton} onPress={() => {
+                            setLoading(true);
+                            void fetchMessages();
+                        }}>
+                            <Text style={s.retryText}>Mar kale isku day</Text>
+                        </Pressable>
+                    </View>
                 ) : (
-                    <FlatList
-                        ref={listRef}
-                        inverted
-                        data={messages}
-                        renderItem={renderItem}
-                        keyExtractor={item => item.id.toString()}
-                        // For an inverted list, paddingTop is physical bottom padding, paddingBottom is physical top padding.
-                        contentContainerStyle={[s.list, { paddingBottom: 20, paddingTop: 23 }]}
-                        ListEmptyComponent={
-                            <View style={{ transform: [{ scaleY: -1 }], alignItems: 'center', marginTop: 50 }}>
-                                <Text style={s.empty}>No messages found.</Text>
-                            </View>
-                        }
-                    />
+                    <>
+                        {loadError && (
+                            <Pressable style={s.inlineError} onPress={() => void fetchMessages()}>
+                                <Text style={s.inlineErrorText}>Connection error. Taabo si aad dib ugu tijaabiso.</Text>
+                            </Pressable>
+                        )}
+                        <FlatList
+                            ref={listRef}
+                            inverted
+                            data={messages}
+                            renderItem={renderItem}
+                            keyExtractor={item => item.id.toString()}
+                            // For an inverted list, paddingTop is physical bottom padding, paddingBottom is physical top padding.
+                            contentContainerStyle={[s.list, { paddingBottom: 20, paddingTop: 23 }]}
+                            ListEmptyComponent={
+                                <View style={{ transform: [{ scaleY: -1 }], alignItems: 'center', marginTop: 50 }}>
+                                    <Text style={s.empty}>Wali fariimo ma jiraan.</Text>
+                                </View>
+                            }
+                        />
+                    </>
                 )}
             </View>
         </PinchGestureHandler>
@@ -292,5 +316,19 @@ const s = StyleSheet.create({
         textAlign: 'center',
         color: '#999',
         marginTop: 50
-    }
+    },
+    errorCard: {
+        margin: 24,
+        marginTop: 60,
+        padding: 18,
+        borderRadius: 14,
+        backgroundColor: '#fff3f2',
+        alignItems: 'center'
+    },
+    errorTitle: { color: Colors.error, fontSize: 17, fontWeight: '700', textAlign: 'center' },
+    errorText: { color: Colors.textSecondary, marginTop: 8, textAlign: 'center', lineHeight: 20 },
+    retryButton: { backgroundColor: Colors.primary, marginTop: 14, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 10 },
+    retryText: { color: Colors.onPrimary, fontWeight: '700' },
+    inlineError: { backgroundColor: '#fff3f2', padding: 10, alignItems: 'center' },
+    inlineErrorText: { color: Colors.error, fontWeight: '600' }
 });

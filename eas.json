@@ -7,12 +7,14 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "environment": "development",
       "env": {
         "APP_VARIANT": "sanabil"
       }
     },
     "sanabil": {
       "distribution": "internal",
+      "environment": "preview",
       "env": {
         "APP_VARIANT": "sanabil"
       },
@@ -23,6 +25,7 @@
     },
     "alsunna": {
       "distribution": "internal",
+      "environment": "preview",
       "env": {
         "APP_VARIANT": "alsunna"
       },
@@ -33,6 +36,7 @@
     },
     "alxikma": {
       "distribution": "internal",
+      "environment": "preview",
       "env": {
         "APP_VARIANT": "alxikma"
       },
@@ -43,6 +47,7 @@
     },
     "schoolb": {
       "distribution": "internal",
+      "environment": "preview",
       "env": {
         "APP_VARIANT": "schoolb"
       },
@@ -53,6 +58,7 @@
     },
     "schoolc": {
       "distribution": "internal",
+      "environment": "preview",
       "env": {
         "APP_VARIANT": "schoolc"
       },
@@ -63,6 +69,7 @@
     },
     "schoold": {
       "distribution": "internal",
+      "environment": "preview",
       "env": {
         "APP_VARIANT": "schoold"
       },
@@ -72,6 +79,7 @@
       }
     },
     "production-sanabil": {
+      "environment": "production",
       "env": {
         "APP_VARIANT": "sanabil"
       },
@@ -79,9 +87,39 @@
         "buildType": "app-bundle",
         "autoIncrement": true
       }
+    },
+    "production-alsunna": {
+      "environment": "production",
+      "env": { "APP_VARIANT": "alsunna" },
+      "android": { "buildType": "app-bundle", "autoIncrement": true }
+    },
+    "production-alxikma": {
+      "environment": "production",
+      "env": { "APP_VARIANT": "alxikma" },
+      "android": { "buildType": "app-bundle", "autoIncrement": true }
+    },
+    "production-schoolb": {
+      "environment": "production",
+      "env": { "APP_VARIANT": "schoolb" },
+      "android": { "buildType": "app-bundle", "autoIncrement": true }
+    },
+    "production-schoolc": {
+      "environment": "production",
+      "env": { "APP_VARIANT": "schoolc" },
+      "android": { "buildType": "app-bundle", "autoIncrement": true }
+    },
+    "production-schoold": {
+      "environment": "production",
+      "env": { "APP_VARIANT": "schoold" },
+      "android": { "buildType": "app-bundle", "autoIncrement": true }
     }
   },
   "submit": {
-    "production-sanabil": {}
+    "production-sanabil": {},
+    "production-alsunna": {},
+    "production-alxikma": {},
+    "production-schoolb": {},
+    "production-schoolc": {},
+    "production-schoold": {}
   }
 }

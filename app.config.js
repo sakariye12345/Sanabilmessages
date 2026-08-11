@@ -78,6 +78,7 @@ module.exports = {
     ],
     extra: {
       schoolId: config.schoolId,
+      appName: config.name,
       primaryColor: config.primaryColor,
       supportPhone: config.supportPhone,
       website: config.website,

@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { spawnSync } = require("child_process");
+const { formatCommandFailure, runProcess } = require("./process-runner");
 
 const root = path.resolve(__dirname, "..");
 const codeOnly = process.argv.includes("--code-only");
@@ -9,22 +9,47 @@ const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
 const node = process.execPath;
 const failures = [];
+const selectedVariants = argumentValue("variants");
+const schoolMatrix = argumentValue("school-matrix");
+const deviceMatrix = argumentValue("device-matrix");
 
-function run(label, command, args) {
+function argumentValue(name) {
+  const prefix = `--${name}=`;
+  const inline = process.argv.find((argument) => argument.startsWith(prefix));
+  if (inline) return inline.slice(prefix.length).trim();
+
+  const index = process.argv.indexOf(`--${name}`);
+  return index >= 0 ? String(process.argv[index + 1] || "").trim() : "";
+}
+
+async function run(label, command, args, timeoutMs = 120_000) {
   console.log(`\n[preflight] ${label}`);
-  const result = spawnSync(command, args, {
+  let result;
+  try {
+    result = await runProcess(command, args, {
     cwd: root,
     env: { ...process.env, CI: "1" },
-    shell:
-      process.platform === "win32" &&
-      /\.(cmd|bat)$/i.test(command),
-    stdio: "inherit",
-  });
-  if (result.error) {
-    console.error(`${label} could not start: ${result.error.message}`);
-  }
-  if (result.status !== 0) {
+      timeoutMs,
+    });
+  } catch (error) {
+    console.error(`${label} could not start: ${error.message}`);
     failures.push(label);
+    return;
+  }
+
+  if (result.status !== 0) {
+    if (result.timedOut) console.error(formatCommandFailure(command, args, result));
+    failures.push(label);
+  }
+}
+
+async function fetchWithTimeout(endpoint, options = {}, timeoutMs = 15_000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(endpoint, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -61,7 +86,7 @@ async function probeSupabase() {
     const headers = { apikey: key, Authorization: `Bearer ${key}` };
     // The OpenAPI root may be service-role-only. A zero-row table request
     // validates the anon key and PostgREST availability without reading data.
-    const response = await fetch(`${url}/rest/v1/allowed_parents?select=id&limit=0`, {
+    const response = await fetchWithTimeout(`${url}/rest/v1/allowed_parents?select=id&limit=0`, {
       headers,
     });
     if (!response.ok) {
@@ -79,7 +104,7 @@ async function probeSupabase() {
     ];
 
     for (const [label, path] of sensitiveProbes) {
-      const probe = await fetch(`${url}/rest/v1/${path}`, {
+      const probe = await fetchWithTimeout(`${url}/rest/v1/${path}`, {
         headers,
       });
 
@@ -109,38 +134,58 @@ async function probeSupabase() {
 }
 
 async function main() {
-  run("Secret scan", npm, ["run", "secrets:scan"]);
-  run("TypeScript", npm, ["run", "typecheck"]);
-  run("Expo Doctor", npx, ["expo-doctor"]);
+  await run("Secret scan", npm, ["run", "secrets:scan"], 60_000);
+  await run("TypeScript", npm, ["run", "typecheck"], 120_000);
+  await run("Expo Doctor", npx, ["expo-doctor"], 180_000);
 
-  const productionArg = codeOnly ? [] : ["--production"];
-  run("School manifest", node, [
+  const variantArg = selectedVariants ? [`--variants=${selectedVariants}`] : [];
+  const schoolMatrixArg = schoolMatrix ? [`--school-matrix=${schoolMatrix}`] : [];
+  const deviceMatrixArg = deviceMatrix ? [`--device-matrix=${deviceMatrix}`] : [];
+  await run("School manifest structure", node, [
     "./scripts/validate-school-manifest.js",
-    ...productionArg,
-  ]);
-  run("School matrix", node, [
+  ], 30_000);
+  await run("School matrix structure", node, [
     "./scripts/validate-school-matrix.js",
-    ...productionArg,
-  ]);
-  run("Device matrix", node, [
+  ], 30_000);
+  await run("Device matrix structure", node, [
     "./scripts/validate-device-matrix.js",
-    ...productionArg,
-  ]);
+  ], 30_000);
 
-  run("WhatsApp service syntax", npm, [
+  if (!codeOnly) {
+    await run("Approved school manifest", node, [
+      "./scripts/validate-school-manifest.js",
+      "--production",
+      ...variantArg,
+    ], 30_000);
+    await run("Approved school matrix", node, [
+      "./scripts/validate-school-matrix.js",
+      "--production",
+      ...variantArg,
+      ...schoolMatrixArg,
+    ], 30_000);
+    await run("Approved device matrix", node, [
+      "./scripts/validate-device-matrix.js",
+      "--production",
+      ...variantArg,
+      ...schoolMatrixArg,
+      ...deviceMatrixArg,
+    ], 30_000);
+  }
+
+  await run("WhatsApp service syntax", npm, [
     "--prefix",
     "whatsapp-service",
     "run",
     "check",
-  ]);
-  run("WhatsApp production dependency audit", npm, [
+  ], 60_000);
+  await run("WhatsApp production dependency audit", npm, [
     "--prefix",
     "whatsapp-service",
     "run",
     "audit:production",
-  ]);
+  ], 120_000);
 
-  run("Edge Function type checks", npx, [
+  await run("Edge Function type checks", npx, [
     "--yes",
     "deno-bin",
     "check",
@@ -149,26 +194,26 @@ async function main() {
     "supabase/functions/request-otp/index.ts",
     "supabase/functions/sync-parents/index.ts",
     "supabase/functions/verify-otp/index.ts",
-  ]);
+  ], 240_000);
 
   if (!skipExport) {
-    run("Android production export", npx, [
+    await run("Android production export", npx, [
       "expo",
       "export",
       "--platform",
       "android",
       "--clear",
-    ]);
+    ], 600_000);
   }
 
   if (!codeOnly) {
-    run("Supabase migration dry-run", npx, [
+    await run("Supabase migration dry-run", npx, [
       "supabase",
       "db",
       "push",
       "--linked",
       "--dry-run",
-    ]);
+    ], 180_000);
 
     const localEnv = loadEnv();
     const url =
@@ -176,13 +221,13 @@ async function main() {
       localEnv.EXPO_PUBLIC_SUPABASE_URL ||
       "";
     const projectRef = new URL(url).hostname.split(".")[0];
-    run("Supabase Edge Functions", npx, [
+    await run("Supabase Edge Functions", npx, [
       "supabase",
       "functions",
       "list",
       "--project-ref",
       projectRef,
-    ]);
+    ], 120_000);
     await probeSupabase();
   }
 

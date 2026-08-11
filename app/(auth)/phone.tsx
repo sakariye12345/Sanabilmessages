@@ -5,6 +5,7 @@ import { supabase } from "../../src/lib/supabase";
 import { normalizeSomaliPhone, toE164SomaliPhone } from "../../src/utils/phone";
 import { getEdgeFunctionErrorMessage } from "../../src/utils/functionError";
 import { SchoolConfig } from "../../src/config/schoolConfig";
+import { Colors } from "../../constants/Colors";
 
 type RequestOtpResponse = {
   success?: boolean;
@@ -82,7 +83,7 @@ export default function PhoneScreen() {
 
   return (
     <View style={s.container}>
-      <Text style={s.title}>Sanabil Messages</Text>
+      <Text style={s.title}>{SchoolConfig.APP_NAME}</Text>
       <Text style={s.sub}>Geli lambarka telefoonka si OTP WhatsApp laguugu soo diro.</Text>
 
       <TextInput
@@ -105,6 +106,6 @@ const s = StyleSheet.create({
   title: { fontSize: 26, fontWeight: "700", marginBottom: 8 },
   sub: { fontSize: 14, opacity: 0.7, marginBottom: 16 },
   input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 12, padding: 12, marginBottom: 12 },
-  btn: { backgroundColor: "#0b57d0", padding: 14, borderRadius: 12, alignItems: "center" },
+  btn: { backgroundColor: Colors.primary, padding: 14, borderRadius: 12, alignItems: "center" },
   btnText: { color: "#fff", fontWeight: "700" },
 });

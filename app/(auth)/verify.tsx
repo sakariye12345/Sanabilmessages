@@ -10,6 +10,7 @@ import {
 import { useAuthStore } from "../../src/store/auth";
 import { SchoolConfig } from "../../src/config/schoolConfig";
 import { getEdgeFunctionErrorMessage } from "../../src/utils/functionError";
+import { Colors } from "../../constants/Colors";
 
 type RequestOtpResponse = {
   success?: boolean;
@@ -239,7 +240,7 @@ const s = StyleSheet.create({
     marginBottom: 12,
     backgroundColor: "#fff",
   },
-  btn: { backgroundColor: "#0b57d0", padding: 14, borderRadius: 12, alignItems: "center", marginBottom: 10 },
+  btn: { backgroundColor: Colors.primary, padding: 14, borderRadius: 12, alignItems: "center", marginBottom: 10 },
   btnText: { color: "#fff", fontWeight: "700" },
   secondaryBtn: {
     padding: 14,

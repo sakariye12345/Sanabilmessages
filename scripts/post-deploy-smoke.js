@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { spawnSync } = require("child_process");
+const { formatCommandFailure, runProcess } = require("./process-runner");
 
 const root = path.resolve(__dirname, "..");
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
@@ -28,20 +28,17 @@ function loadEnv() {
   return values;
 }
 
-function capture(command, args) {
-  const result = spawnSync(command, args, {
+async function capture(command, args) {
+  const result = await runProcess(command, args, {
     cwd: root,
     env: { ...process.env, CI: "1" },
-    encoding: "utf8",
-    shell: process.platform === "win32" && /\.(cmd|bat)$/i.test(command),
+    capture: true,
+    timeoutMs: 120_000,
   });
-  if (result.error) throw result.error;
   if (result.status !== 0) {
-    throw new Error(
-      `${command} ${args.join(" ")} failed: ${result.stderr || result.stdout || "unknown error"}`
-    );
+    throw new Error(formatCommandFailure(command, args, result));
   }
-  return String(result.stdout || "").trim();
+  return result.stdout;
 }
 
 function pass(label, detail = "") {
@@ -55,7 +52,10 @@ function fail(label, detail) {
 
 async function expectHttp(label, endpoint, options, allowedStatuses) {
   try {
-    const response = await fetch(endpoint, options);
+    const response = await fetch(endpoint, {
+      ...options,
+      signal: AbortSignal.timeout(15_000),
+    });
     const body = await response.text();
     if (!allowedStatuses.includes(response.status)) {
       fail(label, `HTTP ${response.status} ${body.slice(0, 300)}`);
@@ -69,9 +69,9 @@ async function expectHttp(label, endpoint, options, allowedStatuses) {
   }
 }
 
-function validateMigrations() {
+async function validateMigrations() {
   try {
-    const raw = capture(npx, [
+    const raw = await capture(npx, [
       "supabase",
       "migration",
       "list",
@@ -99,9 +99,9 @@ function validateMigrations() {
   }
 }
 
-function validateFunctions(projectRef) {
+async function validateFunctions(projectRef) {
   try {
-    const raw = capture(npx, [
+    const raw = await capture(npx, [
       "supabase",
       "functions",
       "list",
@@ -231,8 +231,8 @@ async function main() {
     process.exit(1);
   }
 
-  validateMigrations();
-  validateFunctions(projectRef);
+  await validateMigrations();
+  await validateFunctions(projectRef);
   await validateRestSecurity(url, headers);
   await validateFunctionContracts(url, headers);
 

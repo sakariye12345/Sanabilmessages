@@ -70,6 +70,37 @@ function readSchoolMatrix(csvPath) {
   });
 }
 
+function argumentValue(name) {
+  const inlinePrefix = `--${name}=`;
+  const inline = process.argv.find((argument) => argument.startsWith(inlinePrefix));
+  if (inline) return inline.slice(inlinePrefix.length).trim();
+
+  const index = process.argv.indexOf(`--${name}`);
+  return index >= 0 ? String(process.argv[index + 1] || "").trim() : "";
+}
+
+function resolveInputPath(root, argumentName, environmentName, fallbackPath) {
+  const configured = argumentValue(argumentName) || process.env[environmentName] || fallbackPath;
+  return path.resolve(root, configured);
+}
+
+function selectedVariants() {
+  const raw = argumentValue("variants") || process.env.PRODUCTION_VARIANTS || "";
+  return new Set(raw.split(",").map((value) => value.trim()).filter(Boolean));
+}
+
+function filterSelectedVariants(entries, getVariant, selected, sourceLabel) {
+  if (!selected.size) return entries;
+
+  const available = new Set(entries.map(getVariant));
+  const missing = [...selected].filter((variant) => !available.has(variant));
+  if (missing.length) {
+    throw new Error(`${sourceLabel} is missing selected variants: ${missing.join(", ")}`);
+  }
+
+  return entries.filter((entry) => selected.has(getVariant(entry)));
+}
+
 function isPlaceholder(value) {
   if (!value) return true;
   const normalized = String(value).trim().toLowerCase();
@@ -104,8 +135,12 @@ function sqlString(value) {
 }
 
 module.exports = {
+  argumentValue,
+  filterSelectedVariants,
   readSchoolMatrix,
   isPlaceholder,
   isValidHttpsUrl,
+  resolveInputPath,
+  selectedVariants,
   sqlString,
 };

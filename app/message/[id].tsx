@@ -1,32 +1,43 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable } from "react-native";
 import { useLocalSearchParams, Stack } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
 import dayjs from "dayjs";
 import { SchoolConfig } from "../../src/config/schoolConfig";
+import { Colors } from "../../constants/Colors";
 
 export default function MessageDetailScreen() {
-    const { id } = useLocalSearchParams();
+    const { id } = useLocalSearchParams<{ id: string }>();
     const [message, setMessage] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchMessage();
     }, [id]);
 
     const fetchMessage = async () => {
-        if (!id) return;
+        const messageId = Number(id);
+        if (!Number.isSafeInteger(messageId) || messageId <= 0) {
+            setLoadError("Message ID-ga sax ma aha.");
+            setLoading(false);
+            return;
+        }
 
         try {
+            setLoading(true);
+            setLoadError(null);
+            setMessage(null);
             const { data, error } = await supabase.rpc("get_message_detail", {
                 p_school_id: SchoolConfig.SCHOOL_ID,
-                p_message_id: Number(id),
+                p_message_id: messageId,
             }).maybeSingle();
 
             if (error) throw error;
             setMessage(data);
         } catch (err) {
             console.error("Error fetching message:", err);
+            setLoadError(err instanceof Error ? err.message : "Fariinta lama soo qaadi karin.");
         } finally {
             setLoading(false);
         }
@@ -35,7 +46,7 @@ export default function MessageDetailScreen() {
     if (loading) {
         return (
             <View style={s.center}>
-                <ActivityIndicator size="large" color="#0b57d0" />
+                <ActivityIndicator size="large" color={Colors.primary} />
             </View>
         );
     }
@@ -43,7 +54,14 @@ export default function MessageDetailScreen() {
     if (!message) {
         return (
             <View style={s.center}>
-                <Text>Message not found.</Text>
+                <Text style={loadError ? s.errorText : undefined}>
+                    {loadError || "Fariintan lama helin."}
+                </Text>
+                {loadError && (
+                    <Pressable style={s.retryButton} onPress={() => void fetchMessage()}>
+                        <Text style={s.retryText}>Mar kale isku day</Text>
+                    </Pressable>
+                )}
             </View>
         );
     }
@@ -84,4 +102,7 @@ const s = StyleSheet.create({
     bodyText: { fontSize: 16, lineHeight: 24, color: "#333" },
     tag: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
     tagText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+    errorText: { color: Colors.error, textAlign: "center", marginHorizontal: 24 },
+    retryButton: { backgroundColor: Colors.primary, marginTop: 14, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 10 },
+    retryText: { color: Colors.onPrimary, fontWeight: "700" },
 });

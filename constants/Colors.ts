@@ -1,6 +1,8 @@
+import { SchoolConfig } from '../src/config/schoolConfig';
+
 export const Colors = {
     // Light Mode (Default Google Messages)
-    primary: '#0b57d0', // Google Blue
+    primary: SchoolConfig.PRIMARY_COLOR,
     onPrimary: '#ffffff',
 
     background: '#ffffff',
@@ -23,7 +25,7 @@ export const Colors = {
     },
 
     bubbleInbound: '#f0f4f9',
-    bubbleOutbound: '#0b57d0',
+    bubbleOutbound: SchoolConfig.PRIMARY_COLOR,
 
     textBubbleInbound: '#1f1f1f',
     textBubbleOutbound: '#ffffff',
@@ -31,10 +33,10 @@ export const Colors = {
     border: '#c4c7c5',
 
     // Unread indicator
-    unread: '#0b57d0',
+    unread: SchoolConfig.PRIMARY_COLOR,
 
     // FAB
-    fabBackground: '#0b57d0',
+    fabBackground: SchoolConfig.PRIMARY_COLOR,
     fabContent: '#ffffff',
 
     // Search Bar

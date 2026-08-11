@@ -1,6 +1,12 @@
 const fs = require("fs");
 const path = require("path");
-const { readSchoolMatrix, isPlaceholder } = require("./school-matrix-utils");
+const {
+  filterSelectedVariants,
+  readSchoolMatrix,
+  isPlaceholder,
+  resolveInputPath,
+  selectedVariants,
+} = require("./school-matrix-utils");
 
 function readSimpleCsv(csvPath) {
   const content = fs.readFileSync(csvPath, "utf8").trim();
@@ -20,8 +26,39 @@ function readSimpleCsv(csvPath) {
 
 const root = path.resolve(__dirname, "..");
 const productionMode = process.argv.includes("--production");
-const schoolMatrix = readSchoolMatrix(path.join(root, "school_matrix_template.csv"));
-const deviceMatrix = readSimpleCsv(path.join(root, "pilot_device_test_matrix.csv"));
+const schoolMatrixPath = resolveInputPath(
+  root,
+  "school-matrix",
+  "SCHOOL_MATRIX_PATH",
+  "school_matrix_template.csv"
+);
+const deviceMatrixPath = resolveInputPath(
+  root,
+  "device-matrix",
+  "DEVICE_MATRIX_PATH",
+  "pilot_device_test_matrix.csv"
+);
+const selected = selectedVariants();
+let schoolMatrix;
+let deviceMatrix;
+
+try {
+  schoolMatrix = filterSelectedVariants(
+    readSchoolMatrix(schoolMatrixPath),
+    (row) => row.app_variant,
+    selected,
+    "School matrix"
+  );
+  deviceMatrix = filterSelectedVariants(
+    readSimpleCsv(deviceMatrixPath),
+    (row) => row.app_variant,
+    selected,
+    "Pilot device matrix"
+  );
+} catch (error) {
+  console.error(`ERROR: ${error.message}`);
+  process.exit(1);
+}
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "config", "schools.manifest.json"), "utf8"));
 
 const schoolByVariant = new Map(schoolMatrix.map((row) => [row.app_variant, row]));

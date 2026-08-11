@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { spawnSync } = require("child_process");
+const { formatCommandFailure, runProcess } = require("./process-runner");
 
 const root = path.resolve(__dirname, "..");
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
@@ -43,47 +43,40 @@ function loadEnv() {
   return values;
 }
 
-function run(command, args, options = {}) {
-  const result = spawnSync(command, args, {
+async function run(command, args, options = {}) {
+  const result = await runProcess(command, args, {
     cwd: root,
     env: { ...process.env, CI: "1" },
-    encoding: options.capture ? "utf8" : undefined,
-    shell: process.platform === "win32" && /\.(cmd|bat)$/i.test(command),
-    stdio: options.capture ? ["ignore", "pipe", "pipe"] : "inherit",
+    capture: Boolean(options.capture),
+    timeoutMs: options.timeoutMs || 180_000,
   });
 
-  if (result.error) throw result.error;
   if (result.status !== 0) {
-    const detail = options.capture
-      ? `${result.stdout || ""}\n${result.stderr || ""}`.trim()
-      : "";
-    throw new Error(
-      `Command failed: ${command} ${args.join(" ")}${detail ? `\n${detail}` : ""}`
-    );
+    throw new Error(formatCommandFailure(command, args, result));
   }
 
-  return options.capture ? String(result.stdout || "").trim() : "";
+  return options.capture ? result.stdout : "";
 }
 
-function assertCleanReleaseState() {
+async function assertCleanReleaseState() {
   if (!allowDirty) {
-    const status = run("git", ["status", "--porcelain"], { capture: true });
+    const status = await run("git", ["status", "--porcelain"], { capture: true, timeoutMs: 30_000 });
     if (status) {
       throw new Error("Git worktree is dirty. Commit or stash changes before deployment.");
     }
   }
 
-  const branch = run("git", ["branch", "--show-current"], { capture: true });
+  const branch = await run("git", ["branch", "--show-current"], { capture: true, timeoutMs: 30_000 });
   if (execute && branch !== "main") {
     throw new Error(`Production deployment must run from main, not '${branch || "detached HEAD"}'.`);
   }
 
   if (execute) {
-    const divergence = run(
+    const divergence = (await run(
       "git",
       ["rev-list", "--left-right", "--count", "HEAD...@{upstream}"],
-      { capture: true }
-    ).split(/\s+/).map(Number);
+      { capture: true, timeoutMs: 30_000 }
+    )).split(/\s+/).map(Number);
     if (divergence.length !== 2 || divergence.some((count) => count !== 0)) {
       throw new Error("Local main and its upstream are not identical. Push/pull before deployment.");
     }
@@ -98,7 +91,10 @@ async function probeSupabase(url, anonKey) {
   ];
 
   for (const [label, endpoint] of probes) {
-    const response = await fetch(endpoint, { headers });
+    const response = await fetch(endpoint, {
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    });
     if (!response.ok) {
       const body = (await response.text()).slice(0, 400);
       throw new Error(`${label} health failed: HTTP ${response.status} ${body}`);
@@ -107,8 +103,8 @@ async function probeSupabase(url, anonKey) {
   }
 }
 
-function validateSecrets(projectRef) {
-  const raw = run(
+async function validateSecrets(projectRef) {
+  const raw = await run(
     npx,
     [
       "supabase",
@@ -119,7 +115,7 @@ function validateSecrets(projectRef) {
       "--output-format",
       "json",
     ],
-    { capture: true }
+    { capture: true, timeoutMs: 120_000 }
   );
   const payload = JSON.parse(raw);
   const available = new Set((payload.secrets || []).map((secret) => secret.name));
@@ -130,7 +126,7 @@ function validateSecrets(projectRef) {
   console.log(`[release] Required Edge secrets: ${requiredSecrets.length}/${requiredSecrets.length}`);
 }
 
-function deployFunctions(projectRef) {
+async function deployFunctions(projectRef) {
   for (const deployment of functionDeployments) {
     const args = [
       "supabase",
@@ -142,7 +138,7 @@ function deployFunctions(projectRef) {
       "--use-api",
     ];
     if (deployment.noVerifyJwt) args.push("--no-verify-jwt");
-    run(npx, args);
+    await run(npx, args, { timeoutMs: 300_000 });
   }
 }
 
@@ -157,6 +153,9 @@ async function main() {
 
   const derivedProjectRef = new URL(url).hostname.split(".")[0];
   const projectRef = argumentValue("project-ref") || derivedProjectRef;
+  const variants = argumentValue("variants") || process.env.PRODUCTION_VARIANTS || "";
+  const schoolMatrix = argumentValue("school-matrix") || process.env.SCHOOL_MATRIX_PATH || "";
+  const deviceMatrix = argumentValue("device-matrix") || process.env.DEVICE_MATRIX_PATH || "";
   if (projectRef !== derivedProjectRef) {
     throw new Error("--project-ref does not match EXPO_PUBLIC_SUPABASE_URL.");
   }
@@ -167,13 +166,24 @@ async function main() {
     );
   }
 
+  if (execute && !variants) {
+    throw new Error(
+      "Execution requires --variants=<comma-separated app variants> so only explicitly approved schools are released."
+    );
+  }
+
   console.log(`[release] Mode: ${execute ? "EXECUTE" : "DRY RUN"}`);
   console.log(`[release] Project: ${projectRef}`);
-  assertCleanReleaseState();
+  console.log(`[release] Variants: ${variants || "ALL"}`);
+  await assertCleanReleaseState();
 
-  validateSecrets(projectRef);
+  await validateSecrets(projectRef);
   await probeSupabase(url, anonKey);
-  run(npm, ["run", "preflight:production", "--", "--skip-export"]);
+  const preflightArgs = ["run", "preflight:production", "--", "--skip-export"];
+  if (variants) preflightArgs.push(`--variants=${variants}`);
+  if (schoolMatrix) preflightArgs.push(`--school-matrix=${schoolMatrix}`);
+  if (deviceMatrix) preflightArgs.push(`--device-matrix=${deviceMatrix}`);
+  await run(npm, preflightArgs, { timeoutMs: 600_000 });
 
   if (!execute) {
     console.log("\n[release] DRY RUN PASSED");
@@ -182,9 +192,9 @@ async function main() {
     return;
   }
 
-  run(npx, ["supabase", "db", "push", "--linked", "--yes"]);
-  deployFunctions(projectRef);
-  run(npm, ["run", "smoke:production"]);
+  await run(npx, ["supabase", "db", "push", "--linked", "--yes"], { timeoutMs: 300_000 });
+  await deployFunctions(projectRef);
+  await run(npm, ["run", "smoke:production"], { timeoutMs: 300_000 });
 
   console.log("\n[release] DEPLOYMENT COMPLETED");
   console.log("[release] Cron was not activated. Run the manual end-to-end pilot test first.");
