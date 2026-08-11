@@ -12,6 +12,8 @@
     "schools:validate:production": "node ./scripts/validate-school-manifest.js --production",
     "schools:list": "node ./scripts/list-school-variants.js",
     "schools:build-help": "node ./scripts/school-build-helper.js",
+    "schools:build-contract:validate": "node ./scripts/validate-build-contract.js",
+    "schools:build-contract:validate:production": "node ./scripts/validate-build-contract.js --production",
     "schools:matrix:validate": "node ./scripts/validate-school-matrix.js",
     "schools:matrix:validate:production": "node ./scripts/validate-school-matrix.js --production",
     "schools:seed:generate": "node ./scripts/generate-pilot-seed.js",

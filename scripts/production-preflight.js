@@ -27,8 +27,8 @@ async function run(label, command, args, timeoutMs = 120_000) {
   let result;
   try {
     result = await runProcess(command, args, {
-    cwd: root,
-    env: { ...process.env, CI: "1" },
+      cwd: root,
+      env: { ...process.env, CI: "1" },
       timeoutMs,
     });
   } catch (error) {
@@ -150,6 +150,9 @@ async function main() {
   await run("Device matrix structure", node, [
     "./scripts/validate-device-matrix.js",
   ], 30_000);
+  await run("Expo/EAS build contract", node, [
+    "./scripts/validate-build-contract.js",
+  ], 30_000);
 
   if (!codeOnly) {
     await run("Approved school manifest", node, [
@@ -169,6 +172,11 @@ async function main() {
       ...variantArg,
       ...schoolMatrixArg,
       ...deviceMatrixArg,
+    ], 30_000);
+    await run("Approved Expo/EAS build contract", node, [
+      "./scripts/validate-build-contract.js",
+      "--production",
+      ...variantArg,
     ], 30_000);
   }
 

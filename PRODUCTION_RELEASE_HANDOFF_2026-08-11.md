@@ -30,6 +30,8 @@ Kuwaan dhammaantood way gudbeen:
 - School manifest structural validation: PASS
 - School matrix structural validation: PASS
 - Device matrix structural validation: PASS
+- Expo/EAS build contract, dhammaan 6 variants: PASS
+- Sanabil selected production build contract: PASS
 - WhatsApp service syntax: PASS
 - WhatsApp production dependency audit: `0 vulnerabilities`
 - Deno checks ee 5 Edge Functions: PASS
@@ -108,6 +110,22 @@ npm run preflight:production -- --variants=sanabil,schoolb,schoolc,schoold --sch
 Variant la doortay haddii uusan manifest, school matrix iyo device matrix dhammaantood ku jirin, gate-ku si cad ayuu u diidayaa.
 
 ## 6. EAS Cloud Build Environment
+
+Ka hor EAS build kasta, xaqiiji in manifest-ka, Expo config-ga iyo EAS profiles-ku isku school yihiin:
+
+```powershell
+npm run schools:build-contract:validate:production -- --variants=sanabil
+```
+
+Gate-kan wuxuu diidayaa:
+
+- Preview profile aan dhisayn internal APK.
+- Production profile aan dhisayn Android App Bundle.
+- `APP_VARIANT` profile khaldan.
+- App name, slug, scheme, package ama `school_id` is khilaafsan.
+- EAS project ID placeholder ah.
+- Icon, adaptive icon, splash ama favicon maqan.
+- Production submit profile maqan.
 
 EAS project kasta ku xaqiiji labada public mobile variables ee `preview` iyo `production` environments:
 
