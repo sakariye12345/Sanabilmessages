@@ -1,7 +1,9 @@
 # Sanabil Messages: Production Release Handoff
 
-**Taariikh:** 11 Agoosto 2026  
-**Xaaladda code-ka:** Local production preflight waa PASS  
+**Taariikh:** 11 Agoosto 2026
+
+**Xaaladda code-ka:** Local production preflight waa PASS
+
 **Xaaladda live release-ka:** NO-GO ilaa external blockers-ka hoose la xalliyo
 
 ## 1. Nuxurka Guud
@@ -186,9 +188,12 @@ School kasta ku celi:
 
 ## 9. Go/No-Go Go'aanka
 
-**Code iyo local architecture:** GO  
-**Live Supabase deployment:** NO-GO ilaa 402 laga qaado  
-**Sanabil client pilot:** NO-GO ilaa real local matrices, EAS environments, deployment iyo acceptance test ay gudbaan  
+**Code iyo local architecture:** GO
+
+**Live Supabase deployment:** NO-GO ilaa 402 laga qaado
+
+**Sanabil client pilot:** NO-GO ilaa real local matrices, EAS environments, deployment iyo acceptance test ay gudbaan
+
 **Multi-school architecture:** GO marka school kasta uu leeyahay unique `school_id`, app variant, EAS project, CI3 endpoints, WhatsApp session iyo local test device
 
 Hal Supabase project/plan ayaa schools badan wada qaadi kara sababtoo ah data access-ku `school_id` iyo authenticated parent identity ayuu ku xiran yahay. Kala-soocidda app instances-ku waxay ka dhacdaa build-time variant config; kala-soocidda backend data-kuna waxay ka dhacdaa database RPC/RLS tenant contract-ka.
